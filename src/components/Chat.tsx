@@ -56,7 +56,6 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             content: input.trim()
         };
 
-        // Clear input immediately
         const currentInput = input.trim();
         setInput('');
 
@@ -64,14 +63,11 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             setIsLoading(true);
             setError(null);
 
-            // Save user message
             storageService.addChatMessage(sessionId, userMessage.role, userMessage.content);
 
-            // Update messages state with user message
             const updatedMessages = [...messages, userMessage];
             setMessages(updatedMessages);
 
-            // Generate title if this is the first message
             if (messages.length === 0) {
                 const title = await generateTitle(currentInput, model);
                 storageService.updateChatSessionTitle(sessionId, title);
@@ -82,10 +78,8 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                 content: ''
             };
 
-            // Add empty assistant message to show typing indicator
             setMessages([...updatedMessages, assistantMessage]);
 
-            // Pass all messages to maintain conversation context
             await streamResponse(
                 updatedMessages,
                 model,
@@ -94,7 +88,6 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                     setMessages([...updatedMessages, { ...assistantMessage }]);
                 },
                 async () => {
-                    // Save complete assistant message
                     storageService.addChatMessage(sessionId, assistantMessage.role, assistantMessage.content);
                     setIsLoading(false);
                 }
@@ -103,7 +96,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             console.error('Error generating response:', error);
             setIsLoading(false);
             setError(error.message || 'Failed to generate response. Please try again.');
-            setMessages(messages); // Revert to previous messages state
+            setMessages(messages);
         }
     };
 
@@ -157,7 +150,12 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     };
 
     return (
-        <Container maxWidth="md" sx={{ height: '100vh', display: 'flex', flexDirection: 'column', py: 2 }}>
+        <Box sx={{ 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column',
+            overflow: 'hidden'
+        }}>
             <Box sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -217,7 +215,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                 <div ref={messagesEndRef} />
             </Paper>
             
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, px: 2, pb: 2 }}>
                 <TextField
                     fullWidth
                     multiline
@@ -258,7 +256,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                     {error}
                 </Alert>
             </Snackbar>
-        </Container>
+        </Box>
     );
 };
 

@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import Chat from './components/Chat';
 import Sidebar from './components/Sidebar';
 import ModelSelector from './components/ModelSelector';
+import WindowControls from './components/WindowControls';
 import { storageService } from './services/storageService';
 import { resetContext } from './services/ollamaService';
 
@@ -38,7 +39,6 @@ function App() {
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
 
   useEffect(() => {
-    // Load the most recent chat session or prepare to create a new one
     const initializeChat = () => {
       try {
         const sessions = storageService.getChatSessions();
@@ -61,7 +61,6 @@ function App() {
 
   const handleModelSelect = (model: string) => {
     try {
-      // Reset context for new chat
       resetContext();
       const newSession = storageService.createChatSession('New Chat', model);
       setSelectedChat(newSession.id);
@@ -72,7 +71,6 @@ function App() {
   };
 
   const handleSelectChat = (chatId: number) => {
-    // Reset context when switching chats
     resetContext();
     setSelectedChat(chatId);
   };
@@ -80,21 +78,71 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Sidebar
-          selectedChat={selectedChat}
-          onSelectChat={handleSelectChat}
-          onNewChat={handleNewChat}
-        />
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {selectedChat !== null && (
-            <Chat
-              key={selectedChat}
-              sessionId={selectedChat}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100vh', 
+        overflow: 'hidden',
+        backgroundColor: 'background.default'
+      }}>
+        {/* Titlebar */}
+        <Box
+          sx={{
+            height: '32px',
+            minHeight: '32px',
+            backgroundColor: 'background.paper',
+            WebkitAppRegion: 'drag',
+            position: 'relative',
+            zIndex: 100,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            px: 2
+          }}
+        >
+          <WindowControls />
+        </Box>
+
+        {/* Main Content */}
+        <Box sx={{ 
+          display: 'flex', 
+          flex: 1, 
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          {/* Sidebar */}
+          <Box sx={{ 
+            display: 'flex',
+            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'background.paper',
+          }}>
+            <Sidebar
+              selectedChat={selectedChat}
+              onSelectChat={handleSelectChat}
+              onNewChat={handleNewChat}
             />
-          )}
+          </Box>
+
+          {/* Chat Area */}
+          <Box sx={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column',
+            backgroundColor: 'background.default',
+            overflow: 'hidden',
+            position: 'relative'
+          }}>
+            {selectedChat !== null && (
+              <Chat
+                key={selectedChat}
+                sessionId={selectedChat}
+              />
+            )}
+          </Box>
         </Box>
       </Box>
+
       <ModelSelector
         open={modelSelectorOpen}
         onClose={() => setModelSelectorOpen(false)}

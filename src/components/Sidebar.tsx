@@ -46,9 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
 }) => {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [editingSession, setEditingSession] = useState<ChatSession | null>(
-    null
-  );
+  const [editingSession, setEditingSession] = useState<ChatSession | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -58,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       setChatSessions(
         sessions.map((session) => ({
           ...session,
-          title: session.title.replace(/^["']|["']$/g, ""), // Remove quotes from title
+          title: session.title.replace(/^["']|["']$/g, ""),
         }))
       );
     } catch (error) {
@@ -66,7 +64,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // Poll for updates every 2 seconds
   useEffect(() => {
     loadChatSessions();
     const interval = setInterval(loadChatSessions, 2000);
@@ -78,10 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     loadChatSessions();
   };
 
-  const handleDeleteChat = async (
-    sessionId: number,
-    event: React.MouseEvent
-  ) => {
+  const handleDeleteChat = async (sessionId: number, event: React.MouseEvent) => {
     event.stopPropagation();
     try {
       storageService.deleteChatSession(sessionId);
@@ -104,10 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleEditSave = () => {
     if (editingSession && newTitle.trim()) {
       try {
-        storageService.updateChatSessionTitle(
-          editingSession.id,
-          newTitle.trim()
-        );
+        storageService.updateChatSessionTitle(editingSession.id, newTitle.trim());
         loadChatSessions();
         setDialogOpen(false);
         setEditingSession(null);
@@ -123,10 +114,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       sx={{
         width: 250,
         backgroundColor: "#1a1a1a",
-        borderRight: "1px solid #333",
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
       <Box sx={{ p: 2 }}>
@@ -146,7 +137,23 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Button>
       </Box>
 
-      <List sx={{ flex: 1, overflowY: "auto" }}>
+      <List sx={{ 
+        flex: 1, 
+        overflowY: "auto",
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: '#1a1a1a',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#333',
+          borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: '#444',
+        },
+      }}>
         {chatSessions.map((session) => (
           <ListItem
             key={session.id}
@@ -204,9 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       {session.title}
                     </Typography>
                     <Chip
-                      icon={
-                        <ModelIcon sx={{ fontSize: "0.75rem !important" }} />
-                      }
+                      icon={<ModelIcon sx={{ fontSize: "0.75rem !important" }} />}
                       label={session.model}
                       size="small"
                       variant="outlined"
