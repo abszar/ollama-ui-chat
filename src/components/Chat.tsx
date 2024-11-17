@@ -8,6 +8,7 @@ import { Message } from '../types/chat';
 import { streamResponse, generateTitle } from '../services/ollamaService';
 import { storageService } from '../services/storageService';
 import CodeBlock from './CodeBlock';
+import LoadingDots from './LoadingDots';
 
 interface ChatProps {
     sessionId: number;
@@ -126,7 +127,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                     className={className} 
                     {...props}
                     style={{
-                        backgroundColor: 'rgba(0,0,0,0.3)',
+                        backgroundColor: 'rgba(0,0,0,0.2)',
                         padding: '2px 4px',
                         borderRadius: '4px',
                         fontSize: '0.9em',
@@ -139,7 +140,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         },
         p({ children }: any) {
             return (
-                <p style={{ margin: '0.5em 0', lineHeight: '1.5' }}>
+                <p style={{ margin: '0.5em 0', lineHeight: '1.6' }}>
                     {children}
                 </p>
             );
@@ -154,53 +155,80 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             height: '100%', 
             display: 'flex', 
             flexDirection: 'column',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            bgcolor: '#1a1a1a'
         }}>
             <Box sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: 1, 
-                mb: 2,
-                px: 2,
-                py: 1,
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: 1
+                gap: 1.5, 
+                px: 3,
+                py: 1.5,
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                backgroundColor: 'rgba(255,255,255,0.02)'
             }}>
-                <SmartToyIcon sx={{ color: 'primary.main' }} />
-                <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
-                    Model: {model}
+                <SmartToyIcon sx={{ color: '#666' }} />
+                <Typography variant="subtitle2" sx={{ 
+                    color: '#888',
+                    fontSize: '0.85rem',
+                    fontWeight: 500
+                }}>
+                    {model}
                 </Typography>
             </Box>
             
-            <Paper 
-                elevation={3} 
+            <Box 
                 sx={{ 
                     flex: 1, 
-                    mb: 2, 
                     overflow: 'auto',
-                    p: 2,
+                    px: 3,
+                    py: 4,
                     display: 'flex',
                     flexDirection: 'column',
-                    bgcolor: 'background.paper'
+                    gap: 2.5,
+                    '&::-webkit-scrollbar': {
+                        width: '6px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        background: 'transparent',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        background: '#444',
+                        borderRadius: '3px',
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        background: '#555',
+                    },
                 }}
             >
                 {messages.map((message, index) => (
                     <Box
                         key={index}
                         sx={{
-                            mb: 2,
-                            alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start',
-                            maxWidth: '85%',
-                            width: message.role === 'assistant' ? '85%' : 'auto'
+                            display: 'flex',
+                            justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
+                            maxWidth: '100%',
                         }}
                     >
-                        <Paper
-                            elevation={1}
+                        <Box
                             sx={{
-                                p: 2,
-                                backgroundColor: message.role === 'user' ? 'primary.main' : '#2A2A2A',
-                                color: message.role === 'user' ? 'white' : '#E0E0E0',
-                                width: '100%'
+                                maxWidth: message.role === 'user' ? '60%' : '75%',
+                                backgroundColor: message.role === 'user' ? '#333333' : '#222',
+                                color: message.role === 'user' ? '#e0e0e0' : '#d4d4d4',
+                                borderRadius: '12px',
+                                px: message.role === 'user' ? 2 : 2.5,
+                                py: message.role === 'user' ? 1.5 : 2,
+                                boxShadow: message.role === 'user' ? 'none' : '0 1px 2px rgba(0,0,0,0.1)',
+                                '& pre': {
+                                    margin: '0.5em 0',
+                                },
+                                '& p:first-of-type': {
+                                    marginTop: 0,
+                                },
+                                '& p:last-of-type': {
+                                    marginBottom: 0,
+                                },
                             }}
                         >
                             <ReactMarkdown 
@@ -209,37 +237,117 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                             >
                                 {message.content}
                             </ReactMarkdown>
-                        </Paper>
+                        </Box>
                     </Box>
                 ))}
+                {isLoading && (
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'flex-start',
+                            maxWidth: '100%',
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                backgroundColor: '#222',
+                                borderRadius: '12px',
+                                px: 2.5,
+                                py: 2,
+                            }}
+                        >
+                            <LoadingDots />
+                        </Box>
+                    </Box>
+                )}
                 <div ref={messagesEndRef} />
-            </Paper>
+            </Box>
             
-            <Box sx={{ display: 'flex', gap: 1, px: 2, pb: 2 }}>
-                <TextField
-                    fullWidth
-                    multiline
-                    maxRows={4}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={isLoading ? "Waiting for response..." : "Type your message..."}
-                    disabled={isLoading}
-                    sx={{ 
-                        flex: 1,
-                        '& .MuiOutlinedInput-root': {
-                            backgroundColor: 'background.paper',
-                            color: 'text.primary'
-                        }
-                    }}
-                />
-                <IconButton 
-                    color="primary" 
-                    onClick={handleSend}
-                    disabled={isLoading || !input.trim()}
-                >
-                    <SendIcon />
-                </IconButton>
+            <Box sx={{ 
+                p: 2,
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                backgroundColor: '#1d1d1d'
+            }}>
+                <Box sx={{ 
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    gap: 1,
+                    maxWidth: '900px',
+                    margin: '0 auto',
+                    width: '100%',
+                    backgroundColor: '#2a2a2a',
+                    borderRadius: '16px',
+                    padding: '8px',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                        backgroundColor: '#2f2f2f',
+                    },
+                    '&:focus-within': {
+                        backgroundColor: '#333',
+                        boxShadow: '0 0 0 2px rgba(66, 153, 225, 0.3)',
+                    }
+                }}>
+                    <TextField
+                        fullWidth
+                        multiline
+                        maxRows={4}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder={isLoading ? "Waiting for response..." : "Type your message..."}
+                        disabled={isLoading}
+                        variant="standard"
+                        sx={{ 
+                            flex: 1,
+                            '& .MuiInputBase-root': {
+                                padding: '4px 8px',
+                                fontSize: '0.95rem',
+                                lineHeight: '1.5',
+                                '&:before, &:after': {
+                                    display: 'none',
+                                },
+                            },
+                            '& .MuiInputBase-input': {
+                                color: '#e0e0e0',
+                                padding: '4px 0',
+                                '&::placeholder': {
+                                    color: '#666',
+                                    opacity: 1,
+                                },
+                            },
+                        }}
+                    />
+                    <IconButton 
+                        color="primary" 
+                        onClick={handleSend}
+                        disabled={isLoading || !input.trim()}
+                        sx={{
+                            backgroundColor: 'primary.main',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '12px',
+                            marginBottom: '4px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'primary.dark',
+                                transform: 'scale(1.05)',
+                            },
+                            '&.Mui-disabled': {
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                            },
+                            '& .MuiSvgIcon-root': {
+                                fontSize: '1.2rem',
+                                color: 'white',
+                                transition: 'transform 0.2s ease',
+                            },
+                            '&:hover .MuiSvgIcon-root': {
+                                transform: 'translateX(2px)',
+                            },
+                        }}
+                    >
+                        <SendIcon />
+                    </IconButton>
+                </Box>
             </Box>
 
             <Snackbar 
