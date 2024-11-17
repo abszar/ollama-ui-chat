@@ -13,6 +13,11 @@ interface OllamaModel {
     modified_at: string;
 }
 
+export type OllamaStatus = {
+    isAvailable: boolean;
+    hasModels: boolean;
+};
+
 let currentContext: number[] | undefined;
 
 const formatConversationHistory = (messages: { role: string; content: string }[]): string => {
@@ -23,6 +28,22 @@ const formatConversationHistory = (messages: { role: string; content: string }[]
             return `Assistant: ${msg.content}`;
         }
     }).join('\n\n') + '\n\nHuman: ';
+};
+
+export const checkOllamaStatus = async (): Promise<OllamaStatus> => {
+    try {
+        const response = await fetch('http://localhost:11434/api/tags');
+        if (!response.ok) {
+            return { isAvailable: false, hasModels: false };
+        }
+        const data = await response.json();
+        return { 
+            isAvailable: true, 
+            hasModels: (data.models || []).length > 0 
+        };
+    } catch (error) {
+        return { isAvailable: false, hasModels: false };
+    }
 };
 
 export const getAvailableModels = async (): Promise<OllamaModel[]> => {

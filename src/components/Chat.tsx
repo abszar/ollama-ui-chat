@@ -5,10 +5,11 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Message } from '../types/chat';
-import { streamResponse, generateTitle } from '../services/ollamaService';
+import { streamResponse, generateTitle, checkOllamaStatus } from '../services/ollamaService';
 import { storageService } from '../services/storageService';
 import CodeBlock from './CodeBlock';
 import LoadingDots from './LoadingDots';
+import InstallInstructions from './InstallInstructions';
 
 interface ChatProps {
     sessionId: number;
@@ -20,7 +21,20 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [model, setModel] = useState<string>('');
+    const [ollamaStatus, setOllamaStatus] = useState<{ isAvailable: boolean; hasModels: boolean }>({
+        isAvailable: false,
+        hasModels: false
+    });
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            const status = await checkOllamaStatus();
+            setOllamaStatus(status);
+        };
+
+        checkStatus();
+    }, []);
 
     useEffect(() => {
         const loadChat = () => {
@@ -38,8 +52,10 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             }
         };
 
-        loadChat();
-    }, [sessionId]);
+        if (ollamaStatus.isAvailable && ollamaStatus.hasModels) {
+            loadChat();
+        }
+    }, [sessionId, ollamaStatus]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -149,6 +165,34 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             return <>{children}</>;
         }
     };
+
+    if (!ollamaStatus.isAvailable) {
+        return (
+            <Box sx={{ 
+                height: '100%',
+                bgcolor: '#1a1a1a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <InstallInstructions type="no-ollama" />
+            </Box>
+        );
+    }
+
+    if (!ollamaStatus.hasModels) {
+        return (
+            <Box sx={{ 
+                height: '100%',
+                bgcolor: '#1a1a1a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <InstallInstructions type="no-models" />
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ 
