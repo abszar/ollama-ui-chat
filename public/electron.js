@@ -1,7 +1,10 @@
 const path = require('path');
 const { app, BrowserWindow } = require('electron');
 const isDev = require('electron-is-dev');
-require('@electron/remote/main').initialize();
+
+// Initialize remote module
+const remoteMain = require('@electron/remote/main');
+remoteMain.initialize();
 
 function createWindow() {
     // Create the browser window.
@@ -27,14 +30,25 @@ function createWindow() {
         });
     });
 
-    require('@electron/remote/main').enable(win.webContents);
+    // Enable remote module for this window
+    remoteMain.enable(win.webContents);
 
     // Load the index.html from a url in dev mode, or the local file in prod mode.
-    win.loadURL(
-        isDev
-            ? 'http://localhost:3000'
-            : `file://${path.join(__dirname, '../build/index.html')}`
-    );
+    if (isDev) {
+        win.loadURL('http://localhost:3000');
+    } else {
+        // In production, resolve paths relative to the app's root
+        win.loadFile(path.join(__dirname, 'index.html'));
+        
+        // Set base directory for loading resources
+        win.webContents.on('did-finish-load', () => {
+            win.webContents.executeJavaScript(`
+                const baseElement = document.createElement('base');
+                baseElement.href = 'file://${path.join(__dirname, '/').replace(/\\/g, '/')}';
+                document.head.prepend(baseElement);
+            `);
+        });
+    }
 
     // Open the DevTools in development mode.
     if (isDev) {
@@ -78,7 +92,7 @@ process.on('uncaughtException', (error) => {
     console.error('Uncaught exception:', error);
 });
 
-// Enable remote module
+// Enable remote module for any new windows
 app.on('browser-window-created', (_, window) => {
-    require('@electron/remote/main').enable(window.webContents);
+    remoteMain.enable(window.webContents);
 });
