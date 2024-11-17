@@ -1,46 +1,126 @@
-# Getting Started with Create React App
+# Ollama UI Chat
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern desktop chat interface for Ollama AI models. This application provides a sleek, user-friendly interface for having conversations with locally running Ollama models, similar to ChatGPT but running completely offline.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- 🚀 Cross-platform desktop application (Windows, macOS, Linux)
+- 💬 Modern chat interface with streaming responses
+- 📝 Full Markdown support with syntax highlighting
+- 💾 Persistent chat history with SQLite
+- 🔄 Conversation context management
+- 🎨 Dark mode interface
+- ✨ Code block syntax highlighting with line numbers
+- 📋 One-click code copying
+- 🏷️ Automatic chat title generation
+- 📱 Responsive design
 
-### `npm start`
+## Prerequisites
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Before running this application, make sure you have:
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+1. [Node.js](https://nodejs.org/) (v16 or higher)
+2. [Ollama](https://ollama.ai/) installed and running locally
+3. At least one Ollama model pulled (e.g., qwen2.5-coder)
 
-### `npm test`
+## Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/ollama-ui-chat.git
+cd ollama-ui-chat
+```
 
-### `npm run build`
+2. Install dependencies:
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Start the development server:
+```bash
+npm run electron-dev
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Building for Production
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+To create a production build:
 
-### `npm run eject`
+```bash
+npm run electron-pack
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+The packaged application will be available in the `dist` directory.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Usage
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+1. Start Ollama on your machine
+2. Launch Ollama UI Chat
+3. Start a new chat using the "New Chat" button
+4. Type your message and press Enter or click the send button
+5. The AI will respond, maintaining context throughout the conversation
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Features in Detail
 
-## Learn More
+### Chat Management
+- Create new chats
+- Delete existing chats
+- Edit chat titles
+- Automatic title generation based on first message
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Message Features
+- Full Markdown rendering
+- Syntax highlighted code blocks
+- One-click code copying
+- Message history persistence
+- Real-time streaming responses
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### User Interface
+- Clean, modern design
+- Dark mode
+- Responsive layout
+- Sidebar navigation
+- Message streaming
+
+## Technology Stack
+
+- **Frontend Framework**: React with TypeScript
+- **Desktop Framework**: Electron
+- **Database**: SQLite3
+- **UI Components**: Material-UI (MUI)
+- **Code Highlighting**: Prism.js
+- **Markdown Rendering**: React Markdown
+- **Build Tool**: Create React App with react-app-rewired
+
+## Project Structure
+
+```
+ollama-ui-chat/
+├── public/
+│   ├── electron.js       # Electron main process
+│   └── preload.js        # Preload script for IPC
+├── src/
+│   ├── components/       # React components
+│   ├── services/         # Service layer
+│   ├── types/           # TypeScript types
+│   └── App.tsx          # Main React component
+└── package.json         # Project configuration
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. Check out our [Contributing Guidelines](CONTRIBUTING.md) for more details.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Ollama](https://ollama.ai/) for providing the AI model server
+- [Electron](https://www.electronjs.org/) for the desktop application framework
+- [React](https://reactjs.org/) for the UI framework
+- [Material-UI](https://mui.com/) for the component library
+
+## Support
+
+If you encounter any issues or have questions, please file an issue on the GitHub repository.
