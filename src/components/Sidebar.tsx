@@ -16,6 +16,7 @@ import {
   DialogActions,
   TextField,
   Chip,
+  Divider,
 } from "@mui/material";
 import {
   ChatBubbleOutline as ChatIcon,
@@ -109,15 +110,26 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <Box
       sx={{
-        width: 250,
+        width: 280,
         backgroundColor: "#1a1a1a",
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
+        borderRight: '1px solid #333',
       }}
     >
       <Box sx={{ p: 2 }}>
@@ -128,8 +140,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           onClick={handleNewChat}
           sx={{
             backgroundColor: "#2d2d2d",
+            boxShadow: 'none',
+            height: '44px',
+            fontSize: '0.95rem',
+            textTransform: 'none',
             "&:hover": {
               backgroundColor: "#3d3d3d",
+              boxShadow: 'none',
             },
           }}
         >
@@ -137,95 +154,132 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Button>
       </Box>
 
+      <Divider sx={{ borderColor: '#333' }} />
+
       <List sx={{ 
         flex: 1, 
         overflowY: "auto",
+        py: 0,
         '&::-webkit-scrollbar': {
-          width: '8px',
+          width: '6px',
         },
         '&::-webkit-scrollbar-track': {
           background: '#1a1a1a',
         },
         '&::-webkit-scrollbar-thumb': {
-          background: '#333',
-          borderRadius: '4px',
+          background: '#444',
+          borderRadius: '3px',
         },
         '&::-webkit-scrollbar-thumb:hover': {
-          background: '#444',
+          background: '#555',
         },
       }}>
         {chatSessions.map((session) => (
           <ListItem
             key={session.id}
             disablePadding
-            secondaryAction={
-              <Box>
-                <Tooltip title="Edit title">
-                  <IconButton
-                    edge="end"
-                    onClick={(e) => handleEditClick(session, e)}
-                    sx={{ color: "#888" }}
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete chat">
-                  <IconButton
-                    edge="end"
-                    onClick={(e) => handleDeleteChat(session.id, e)}
-                    sx={{ color: "#888" }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            }
+            sx={{
+              borderBottom: '1px solid #2a2a2a',
+            }}
           >
             <ListItemButton
               selected={selectedChat === session.id}
               onClick={() => onSelectChat(session.id)}
               sx={{
+                py: 1.5,
+                px: 2,
                 "&.Mui-selected": {
                   backgroundColor: "#2d2d2d",
                   "&:hover": {
                     backgroundColor: "#3d3d3d",
                   },
                 },
+                "&:hover": {
+                  backgroundColor: "#252525",
+                  "& .action-buttons": {
+                    opacity: 1,
+                  },
+                },
               }}
             >
-              <ListItemIcon sx={{ color: "#888" }}>
-                <ChatIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={
-                  <Box>
-                    <Typography
-                      noWrap
-                      sx={{
-                        color: "#fff",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        mb: 0.5,
-                      }}
-                    >
-                      {session.title}
-                    </Typography>
-                    <Chip
-                      icon={<ModelIcon sx={{ fontSize: "0.75rem !important" }} />}
-                      label={session.model}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        height: "20px",
-                        "& .MuiChip-label": {
-                          fontSize: "0.65rem",
-                          px: 1,
-                        },
-                      }}
-                    />
+              <Box sx={{ width: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <ChatIcon sx={{ color: '#888', fontSize: '1.2rem', mr: 1 }} />
+                  <Typography
+                    noWrap
+                    sx={{
+                      color: "#fff",
+                      fontSize: "0.9rem",
+                      fontWeight: 500,
+                      flex: 1,
+                    }}
+                  >
+                    {session.title}
+                  </Typography>
+                  <Box 
+                    className="action-buttons"
+                    sx={{ 
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                      display: 'flex',
+                      gap: 0.5
+                    }}
+                  >
+                    <Tooltip title="Edit title">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleEditClick(session, e)}
+                        sx={{ 
+                          color: "#888",
+                          padding: '4px',
+                          '&:hover': { color: '#fff', backgroundColor: '#444' }
+                        }}
+                      >
+                        <EditIcon sx={{ fontSize: '1rem' }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete chat">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleDeleteChat(session.id, e)}
+                        sx={{ 
+                          color: "#888",
+                          padding: '4px',
+                          '&:hover': { color: '#ff4444', backgroundColor: '#442222' }
+                        }}
+                      >
+                        <DeleteIcon sx={{ fontSize: '1rem' }} />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
-                }
-              />
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Chip
+                    icon={<ModelIcon sx={{ fontSize: "0.75rem !important" }} />}
+                    label={session.model}
+                    size="small"
+                    sx={{
+                      height: "22px",
+                      backgroundColor: '#2d2d2d',
+                      border: '1px solid #444',
+                      color: '#888',
+                      "& .MuiChip-label": {
+                        fontSize: "0.7rem",
+                        px: 1,
+                      },
+                    }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#666',
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {formatDate(session.updated_at)}
+                  </Typography>
+                </Box>
+              </Box>
             </ListItemButton>
           </ListItem>
         ))}
