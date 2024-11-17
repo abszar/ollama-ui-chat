@@ -17,7 +17,8 @@ A modern desktop chat interface for Ollama AI models. This application provides 
 - 🏷️ Automatic chat title generation
 - 📱 Responsive design
 
-<img src="https://github.com/user-attachments/assets/ec67dd90-39d5-4724-9747-92cca3eb3de4" width="700">
+<img src="https://github.com/user-attachments/assets/d172c7ba-a6b5-4bc1-b2cc-95c582693345" width="700">
+
 
 ## Prerequisites
 
