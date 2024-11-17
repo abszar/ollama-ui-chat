@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, TextField, IconButton, Paper, Container, Alert, Snackbar } from '@mui/material';
+import { Box, TextField, IconButton, Paper, Container, Alert, Snackbar, Typography } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Message } from '../types/chat';
-import { streamResponse, generateTitle, resetContext } from '../services/ollamaService';
-import { databaseService } from '../services/databaseService';
+import { streamResponse, generateTitle } from '../services/ollamaService';
+import { storageService } from '../services/storageService';
 import CodeBlock from './CodeBlock';
 
 interface ChatProps {
@@ -17,27 +18,26 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [model, setModel] = useState<string>('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Reset context when switching chats
-        resetContext();
-        
-        // Load messages for this session
-        const loadMessages = async () => {
+        const loadChat = () => {
             try {
-                const chatMessages = await databaseService.getChatMessages(sessionId);
+                const chatMessages = storageService.getChatMessages(sessionId);
+                const chatModel = storageService.getChatModel(sessionId);
                 setMessages(chatMessages.map(msg => ({
                     role: msg.role,
                     content: msg.content
                 })));
+                setModel(chatModel);
             } catch (error) {
-                console.error('Error loading messages:', error);
+                console.error('Error loading chat:', error);
                 setError('Failed to load messages');
             }
         };
 
-        loadMessages();
+        loadChat();
     }, [sessionId]);
 
     const scrollToBottom = () => {
@@ -56,9 +56,16 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             content: input.trim()
         };
 
+        // Clear input immediately
+        const currentInput = input.trim();
+        setInput('');
+
         try {
-            // Save user message to database
-            await databaseService.addChatMessage(sessionId, userMessage.role, userMessage.content);
+            setIsLoading(true);
+            setError(null);
+
+            // Save user message
+            storageService.addChatMessage(sessionId, userMessage.role, userMessage.content);
 
             // Update messages state with user message
             const updatedMessages = [...messages, userMessage];
@@ -66,13 +73,9 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
 
             // Generate title if this is the first message
             if (messages.length === 0) {
-                const title = await generateTitle(userMessage.content);
-                await databaseService.updateChatSessionTitle(sessionId, title);
+                const title = await generateTitle(currentInput, model);
+                storageService.updateChatSessionTitle(sessionId, title);
             }
-
-            setInput('');
-            setIsLoading(true);
-            setError(null);
 
             let assistantMessage: Message = {
                 role: 'assistant',
@@ -85,13 +88,14 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             // Pass all messages to maintain conversation context
             await streamResponse(
                 updatedMessages,
+                model,
                 (chunk) => {
                     assistantMessage.content += chunk;
                     setMessages([...updatedMessages, { ...assistantMessage }]);
                 },
                 async () => {
-                    // Save complete assistant message to database
-                    await databaseService.addChatMessage(sessionId, assistantMessage.role, assistantMessage.content);
+                    // Save complete assistant message
+                    storageService.addChatMessage(sessionId, assistantMessage.role, assistantMessage.content);
                     setIsLoading(false);
                 }
             );
@@ -154,6 +158,22 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
 
     return (
         <Container maxWidth="md" sx={{ height: '100vh', display: 'flex', flexDirection: 'column', py: 2 }}>
+            <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1, 
+                mb: 2,
+                px: 2,
+                py: 1,
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: 1
+            }}>
+                <SmartToyIcon sx={{ color: 'primary.main' }} />
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+                    Model: {model}
+                </Typography>
+            </Box>
+            
             <Paper 
                 elevation={3} 
                 sx={{ 
