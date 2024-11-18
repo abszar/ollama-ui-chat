@@ -1,4 +1,7 @@
+<img width="100" alt="icon" src="https://github.com/user-attachments/assets/5a8518cb-0dc0-4560-b562-c95c286b427b">
+
 # Ollama UI Chat
+
 
 A modern desktop chat interface for Ollama AI models. This application provides a sleek, user-friendly interface for having conversations with locally running Ollama models, similar to ChatGPT but running completely offline.
 
