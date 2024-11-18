@@ -1,6 +1,8 @@
 {
   "name": "ollama-ui-chat",
   "version": "0.1.0",
+  "description": "A user interface chat application for Ollama",
+  "author": "abszar",
   "private": true,
   "main": "public/electron.js",
   "homepage": "./",
@@ -57,13 +59,26 @@
       "output": "dist"
     },
     "win": {
-      "target": ["nsis", "portable"]
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.png"
     },
     "mac": {
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns"
     },
     "linux": {
-      "target": ["AppImage", "deb", "rpm"]
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
+      "icon": "assets/icon.png"
     }
   },
   "eslintConfig": {
