@@ -7,18 +7,18 @@ import ModelSelector from './components/ModelSelector';
 import WindowControls from './components/WindowControls';
 import ConfigDialog from './components/ConfigDialog';
 import { storageService } from './services/storageService';
-import { configService } from './services/configService';
+import { configService, ThemeMode } from './services/configService';
 import { resetContext } from './services/ollamaService';
 
-const theme = createTheme({
+const createAppTheme = (mode: ThemeMode) => createTheme({
   palette: {
-    mode: 'dark',
+    mode,
     primary: {
       main: '#2196f3',
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: mode === 'dark' ? '#121212' : '#f5f5f5',
+      paper: mode === 'dark' ? '#1e1e1e' : '#ffffff',
     },
   },
   components: {
@@ -29,7 +29,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
           },
         },
       },
@@ -42,6 +42,8 @@ function App() {
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [baseUrl, setBaseUrl] = useState(configService.getBaseUrl());
+  const [themeMode, setThemeMode] = useState<ThemeMode>(configService.getTheme());
+  const theme = createAppTheme(themeMode);
 
   useEffect(() => {
     const initializeChat = () => {
@@ -80,9 +82,11 @@ function App() {
     setSelectedChat(chatId);
   };
 
-  const handleSaveConfig = (newBaseUrl: string) => {
+  const handleSaveConfig = (newBaseUrl: string, newTheme: ThemeMode) => {
     configService.setBaseUrl(newBaseUrl);
+    configService.setTheme(newTheme);
     setBaseUrl(newBaseUrl);
+    setThemeMode(newTheme);
   };
 
   return (
@@ -104,7 +108,8 @@ function App() {
             WebkitAppRegion: 'drag',
             position: 'relative',
             zIndex: 100,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: '1px solid',
+            borderColor: theme.palette.divider,
             display: 'flex',
             alignItems: 'center',
             px: 2,
@@ -136,7 +141,8 @@ function App() {
           {/* Sidebar */}
           <Box sx={{ 
             display: 'flex',
-            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRight: '1px solid',
+            borderColor: theme.palette.divider,
             backgroundColor: 'background.paper',
           }}>
             <Sidebar
@@ -175,6 +181,7 @@ function App() {
         open={configOpen}
         onClose={() => setConfigOpen(false)}
         currentBaseUrl={baseUrl}
+        currentTheme={themeMode}
         onSave={handleSaveConfig}
       />
     </ThemeProvider>

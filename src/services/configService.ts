@@ -1,11 +1,15 @@
 const CONFIG_KEY = 'ollama_config';
 
+export type ThemeMode = 'light' | 'dark';
+
 interface Config {
   baseUrl: string;
+  theme: ThemeMode;
 }
 
 const defaultConfig: Config = {
-  baseUrl: 'http://localhost:11434'
+  baseUrl: 'http://localhost:11434',
+  theme: 'dark'
 };
 
 export const configService = {
@@ -34,6 +38,16 @@ export const configService = {
   setBaseUrl: (baseUrl: string): void => {
     const config = configService.getConfig();
     config.baseUrl = baseUrl;
+    configService.setConfig(config);
+  },
+
+  getTheme: (): ThemeMode => {
+    return configService.getConfig().theme;
+  },
+
+  setTheme: (theme: ThemeMode): void => {
+    const config = configService.getConfig();
+    config.theme = theme;
     configService.setConfig(config);
   }
 };

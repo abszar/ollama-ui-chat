@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, TextField, IconButton, Paper, Container, Alert, Snackbar, Typography } from '@mui/material';
+import { Box, TextField, IconButton, Paper, Container, Alert, Snackbar, Typography, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
@@ -16,6 +16,7 @@ interface ChatProps {
 }
 
 const Chat: React.FC<ChatProps> = ({ sessionId }) => {
+    const theme = useTheme();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -143,7 +144,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                     className={className} 
                     {...props}
                     style={{
-                        backgroundColor: 'rgba(0,0,0,0.2)',
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)',
                         padding: '2px 4px',
                         borderRadius: '4px',
                         fontSize: '0.9em',
@@ -170,7 +171,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         return (
             <Box sx={{ 
                 height: '100%',
-                bgcolor: '#1a1a1a',
+                bgcolor: 'background.default',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -184,7 +185,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         return (
             <Box sx={{ 
                 height: '100%',
-                bgcolor: '#1a1a1a',
+                bgcolor: 'background.default',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -200,7 +201,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             display: 'flex', 
             flexDirection: 'column',
             overflow: 'hidden',
-            bgcolor: '#1a1a1a'
+            bgcolor: 'background.default'
         }}>
             <Box sx={{ 
                 display: 'flex', 
@@ -208,13 +209,13 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                 gap: 1.5, 
                 px: 3,
                 py: 1.5,
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                borderBottom: `1px solid ${theme.palette.divider}`,
                 backdropFilter: 'blur(10px)',
-                backgroundColor: 'rgba(255,255,255,0.02)'
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'
             }}>
-                <SmartToyIcon sx={{ color: '#666' }} />
+                <SmartToyIcon sx={{ color: theme.palette.text.disabled }} />
                 <Typography variant="subtitle2" sx={{ 
-                    color: '#888',
+                    color: theme.palette.text.secondary,
                     fontSize: '0.85rem',
                     fontWeight: 500
                 }}>
@@ -238,11 +239,11 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                         background: 'transparent',
                     },
                     '&::-webkit-scrollbar-thumb': {
-                        background: '#444',
+                        background: theme.palette.mode === 'dark' ? '#444' : '#ccc',
                         borderRadius: '3px',
                     },
                     '&::-webkit-scrollbar-thumb:hover': {
-                        background: '#555',
+                        background: theme.palette.mode === 'dark' ? '#555' : '#bbb',
                     },
                 }}
             >
@@ -258,12 +259,14 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                         <Box
                             sx={{
                                 maxWidth: message.role === 'user' ? '60%' : '75%',
-                                backgroundColor: message.role === 'user' ? '#333333' : '#222',
-                                color: message.role === 'user' ? '#e0e0e0' : '#d4d4d4',
+                                backgroundColor: message.role === 'user' 
+                                    ? theme.palette.mode === 'dark' ? '#333333' : '#e3f2fd'
+                                    : theme.palette.mode === 'dark' ? '#222' : '#f5f5f5',
+                                color: theme.palette.text.primary,
                                 borderRadius: '12px',
                                 px: message.role === 'user' ? 2 : 2.5,
                                 py: message.role === 'user' ? 1.5 : 2,
-                                boxShadow: message.role === 'user' ? 'none' : '0 1px 2px rgba(0,0,0,0.1)',
+                                boxShadow: message.role === 'user' ? 'none' : theme.shadows[1],
                                 '& pre': {
                                     margin: '0.5em 0',
                                 },
@@ -294,7 +297,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                     >
                         <Box
                             sx={{
-                                backgroundColor: '#222',
+                                backgroundColor: theme.palette.mode === 'dark' ? '#222' : '#f5f5f5',
                                 borderRadius: '12px',
                                 px: 2.5,
                                 py: 2,
@@ -309,8 +312,8 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             
             <Box sx={{ 
                 p: 2,
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                backgroundColor: '#1d1d1d'
+                borderTop: `1px solid ${theme.palette.divider}`,
+                backgroundColor: theme.palette.mode === 'dark' ? '#1d1d1d' : '#f8f9fa'
             }}>
                 <Box sx={{ 
                     display: 'flex',
@@ -319,16 +322,17 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                     maxWidth: '900px',
                     margin: '0 auto',
                     width: '100%',
-                    backgroundColor: '#2a2a2a',
+                    backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#fff',
                     borderRadius: '16px',
                     padding: '8px',
                     transition: 'all 0.2s ease',
+                    border: `1px solid ${theme.palette.divider}`,
                     '&:hover': {
-                        backgroundColor: '#2f2f2f',
+                        backgroundColor: theme.palette.mode === 'dark' ? '#2f2f2f' : '#fafafa',
                     },
                     '&:focus-within': {
-                        backgroundColor: '#333',
-                        boxShadow: '0 0 0 2px rgba(66, 153, 225, 0.3)',
+                        backgroundColor: theme.palette.mode === 'dark' ? '#333' : '#fff',
+                        boxShadow: `0 0 0 2px ${theme.palette.primary.main}33`,
                     }
                 }}>
                     <TextField
@@ -352,10 +356,10 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                                 },
                             },
                             '& .MuiInputBase-input': {
-                                color: '#e0e0e0',
+                                color: theme.palette.text.primary,
                                 padding: '4px 0',
                                 '&::placeholder': {
-                                    color: '#666',
+                                    color: theme.palette.text.disabled,
                                     opacity: 1,
                                 },
                             },
@@ -377,7 +381,9 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                                 transform: 'scale(1.05)',
                             },
                             '&.Mui-disabled': {
-                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                backgroundColor: theme.palette.mode === 'dark' 
+                                    ? 'rgba(255,255,255,0.1)' 
+                                    : 'rgba(0,0,0,0.1)',
                             },
                             '& .MuiSvgIcon-root': {
                                 fontSize: '1.2rem',

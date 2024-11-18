@@ -17,6 +17,7 @@ import {
   TextField,
   Chip,
   Divider,
+  useTheme,
 } from "@mui/material";
 import {
   ChatBubbleOutline as ChatIcon,
@@ -46,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelectChat,
   onNewChat,
 }) => {
+  const theme = useTheme();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [editingSession, setEditingSession] = useState<ChatSession | null>(null);
   const [newTitle, setNewTitle] = useState("");
@@ -124,12 +126,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     <Box
       sx={{
         width: 280,
-        backgroundColor: "#1a1a1a",
+        backgroundColor: 'background.paper',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        borderRight: '1px solid #333',
+        borderRight: `1px solid ${theme.palette.divider}`,
       }}
     >
       <Box sx={{ p: 2 }}>
@@ -139,13 +141,14 @@ const Sidebar: React.FC<SidebarProps> = ({
           startIcon={<AddIcon />}
           onClick={handleNewChat}
           sx={{
-            backgroundColor: "#2d2d2d",
+            backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f0f0f0',
+            color: theme.palette.text.primary,
             boxShadow: 'none',
             height: '44px',
             fontSize: '0.95rem',
             textTransform: 'none',
             "&:hover": {
-              backgroundColor: "#3d3d3d",
+              backgroundColor: theme.palette.mode === 'dark' ? '#3d3d3d' : '#e0e0e0',
               boxShadow: 'none',
             },
           }}
@@ -154,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Button>
       </Box>
 
-      <Divider sx={{ borderColor: '#333' }} />
+      <Divider sx={{ borderColor: theme.palette.divider }} />
 
       <List sx={{ 
         flex: 1, 
@@ -164,14 +167,14 @@ const Sidebar: React.FC<SidebarProps> = ({
           width: '6px',
         },
         '&::-webkit-scrollbar-track': {
-          background: '#1a1a1a',
+          background: theme.palette.background.paper,
         },
         '&::-webkit-scrollbar-thumb': {
-          background: '#444',
+          background: theme.palette.mode === 'dark' ? '#444' : '#ccc',
           borderRadius: '3px',
         },
         '&::-webkit-scrollbar-thumb:hover': {
-          background: '#555',
+          background: theme.palette.mode === 'dark' ? '#555' : '#bbb',
         },
       }}>
         {chatSessions.map((session) => (
@@ -179,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             key={session.id}
             disablePadding
             sx={{
-              borderBottom: '1px solid #2a2a2a',
+              borderBottom: `1px solid ${theme.palette.divider}`,
             }}
           >
             <ListItemButton
@@ -189,13 +192,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                 py: 1.5,
                 px: 2,
                 "&.Mui-selected": {
-                  backgroundColor: "#2d2d2d",
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.04)',
                   "&:hover": {
-                    backgroundColor: "#3d3d3d",
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'rgba(0, 0, 0, 0.08)',
                   },
                 },
                 "&:hover": {
-                  backgroundColor: "#252525",
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.02)',
                   "& .action-buttons": {
                     opacity: 1,
                   },
@@ -204,11 +213,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
               <Box sx={{ width: '100%' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <ChatIcon sx={{ color: '#888', fontSize: '1.2rem', mr: 1 }} />
+                  <ChatIcon sx={{ color: theme.palette.text.secondary, fontSize: '1.2rem', mr: 1 }} />
                   <Typography
                     noWrap
                     sx={{
-                      color: "#fff",
+                      color: theme.palette.text.primary,
                       fontSize: "0.9rem",
                       fontWeight: 500,
                       flex: 1,
@@ -230,9 +239,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                         size="small"
                         onClick={(e) => handleEditClick(session, e)}
                         sx={{ 
-                          color: "#888",
+                          color: theme.palette.text.secondary,
                           padding: '4px',
-                          '&:hover': { color: '#fff', backgroundColor: '#444' }
+                          '&:hover': { 
+                            color: theme.palette.text.primary,
+                            backgroundColor: theme.palette.action.hover
+                          }
                         }}
                       >
                         <EditIcon sx={{ fontSize: '1rem' }} />
@@ -243,9 +255,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                         size="small"
                         onClick={(e) => handleDeleteChat(session.id, e)}
                         sx={{ 
-                          color: "#888",
+                          color: theme.palette.text.secondary,
                           padding: '4px',
-                          '&:hover': { color: '#ff4444', backgroundColor: '#442222' }
+                          '&:hover': { 
+                            color: theme.palette.error.main,
+                            backgroundColor: theme.palette.error.main + '1A'
+                          }
                         }}
                       >
                         <DeleteIcon sx={{ fontSize: '1rem' }} />
@@ -260,9 +275,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                     size="small"
                     sx={{
                       height: "22px",
-                      backgroundColor: '#2d2d2d',
-                      border: '1px solid #444',
-                      color: '#888',
+                      backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
+                      border: `1px solid ${theme.palette.divider}`,
+                      color: theme.palette.text.secondary,
                       "& .MuiChip-label": {
                         fontSize: "0.7rem",
                         px: 1,
@@ -272,7 +287,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <Typography
                     variant="caption"
                     sx={{
-                      color: '#666',
+                      color: theme.palette.text.secondary,
                       fontSize: '0.7rem',
                     }}
                   >
@@ -285,7 +300,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </List>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+      <Dialog 
+        open={dialogOpen} 
+        onClose={() => setDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.background.paper,
+          }
+        }}
+      >
         <DialogTitle>Edit Chat Title</DialogTitle>
         <DialogContent>
           <TextField
@@ -300,7 +323,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSave}>Save</Button>
+          <Button onClick={handleEditSave} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
     </Box>
