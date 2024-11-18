@@ -4,8 +4,6 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemText,
-  ListItemIcon,
   IconButton,
   Button,
   Typography,
@@ -28,6 +26,7 @@ import {
 } from "@mui/icons-material";
 import { storageService } from "../services/storageService";
 
+// Types
 interface ChatSession {
   id: number;
   title: string;
@@ -42,17 +41,31 @@ interface SidebarProps {
   onNewChat: () => void;
 }
 
+/**
+ * Sidebar component that displays chat sessions and handles chat management
+ * Features:
+ * - List of chat sessions
+ * - New chat creation
+ * - Chat deletion
+ * - Chat title editing
+ */
 const Sidebar: React.FC<SidebarProps> = ({
   selectedChat,
   onSelectChat,
   onNewChat,
 }) => {
   const theme = useTheme();
+  
+  // State
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [editingSession, setEditingSession] = useState<ChatSession | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  /**
+   * Loads chat sessions from storage
+   * Removes any quotes from titles for clean display
+   */
   const loadChatSessions = () => {
     try {
       const sessions = storageService.getChatSessions();
@@ -67,12 +80,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  // Load chat sessions on mount and periodically refresh
   useEffect(() => {
     loadChatSessions();
     const interval = setInterval(loadChatSessions, 2000);
     return () => clearInterval(interval);
   }, []);
 
+  // Event handlers
   const handleNewChat = () => {
     onNewChat();
     loadChatSessions();
@@ -112,6 +127,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  /**
+   * Formats a date string into a readable format
+   */
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -134,6 +152,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         borderRight: `1px solid ${theme.palette.divider}`,
       }}
     >
+      {/* New Chat Button */}
       <Box sx={{ p: 2 }}>
         <Button
           variant="contained"
@@ -159,6 +178,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <Divider sx={{ borderColor: theme.palette.divider }} />
 
+      {/* Chat Sessions List */}
       <List sx={{ 
         flex: 1, 
         overflowY: "auto",
@@ -212,6 +232,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               }}
             >
               <Box sx={{ width: '100%' }}>
+                {/* Chat Title and Actions */}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <ChatIcon sx={{ color: theme.palette.text.secondary, fontSize: '1.2rem', mr: 1 }} />
                   <Typography
@@ -268,6 +289,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </Tooltip>
                   </Box>
                 </Box>
+                
+                {/* Model and Date */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Chip
                     icon={<ModelIcon sx={{ fontSize: "0.75rem !important" }} />}
@@ -300,6 +323,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </List>
 
+      {/* Edit Title Dialog */}
       <Dialog 
         open={dialogOpen} 
         onClose={() => setDialogOpen(false)}

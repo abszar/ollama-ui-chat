@@ -1,5 +1,6 @@
 import { configService } from './configService';
 
+// Response types
 interface OllamaResponse {
     model: string;
     created_at: string;
@@ -20,8 +21,13 @@ export type OllamaStatus = {
     hasModels: boolean;
 };
 
+// Store conversation context for continuous chat
 let currentContext: number[] | undefined;
 
+/**
+ * Formats the conversation history into a prompt string
+ * Adds appropriate prefixes for user and assistant messages
+ */
 const formatConversationHistory = (messages: { role: string; content: string }[]): string => {
     return messages.map(msg => {
         if (msg.role === 'user') {
@@ -32,6 +38,9 @@ const formatConversationHistory = (messages: { role: string; content: string }[]
     }).join('\n\n') + '\n\nHuman: ';
 };
 
+/**
+ * Checks if Ollama is available and has models installed
+ */
 export const checkOllamaStatus = async (): Promise<OllamaStatus> => {
     try {
         const baseUrl = configService.getBaseUrl();
@@ -49,6 +58,9 @@ export const checkOllamaStatus = async (): Promise<OllamaStatus> => {
     }
 };
 
+/**
+ * Retrieves the list of available Ollama models
+ */
 export const getAvailableModels = async (): Promise<OllamaModel[]> => {
     try {
         const baseUrl = configService.getBaseUrl();
@@ -64,6 +76,9 @@ export const getAvailableModels = async (): Promise<OllamaModel[]> => {
     }
 };
 
+/**
+ * Generates a title for a chat based on its first message
+ */
 export const generateTitle = async (content: string, model: string): Promise<string> => {
     try {
         const baseUrl = configService.getBaseUrl();
@@ -91,6 +106,11 @@ export const generateTitle = async (content: string, model: string): Promise<str
     }
 };
 
+/**
+ * Streams a response from the Ollama API
+ * Handles continuous conversation by maintaining context
+ * Provides real-time updates through callbacks
+ */
 export const streamResponse = async (
     messages: { role: string; content: string }[],
     model: string,
@@ -98,12 +118,14 @@ export const streamResponse = async (
     onComplete: () => void
 ): Promise<void> => {
     try {
+        // Prepare the prompt using conversation history
         const conversationHistory = messages.slice(0, -1);
         const currentMessage = messages[messages.length - 1];
         const prompt = conversationHistory.length > 0 
             ? formatConversationHistory(conversationHistory) + currentMessage.content
             : currentMessage.content;
 
+        // Make the API request
         const baseUrl = configService.getBaseUrl();
         const response = await fetch(`${baseUrl}/api/generate`, {
             method: 'POST',
@@ -122,11 +144,13 @@ export const streamResponse = async (
             throw new Error('Failed to generate response');
         }
 
+        // Set up the stream reader
         const reader = response.body?.getReader();
         if (!reader) {
             throw new Error('Failed to create stream reader');
         }
 
+        // Process the stream
         while (true) {
             const { done, value } = await reader.read();
             if (done) {
@@ -157,6 +181,10 @@ export const streamResponse = async (
     }
 };
 
+/**
+ * Resets the conversation context
+ * Used when starting a new chat or switching between chats
+ */
 export const resetContext = () => {
     currentContext = undefined;
 };

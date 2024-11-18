@@ -10,6 +10,9 @@ import { storageService } from './services/storageService';
 import { configService, ThemeMode } from './services/configService';
 import { resetContext } from './services/ollamaService';
 
+/**
+ * Creates a theme object based on the current mode (light/dark)
+ */
 const createAppTheme = (mode: ThemeMode) => createTheme({
   palette: {
     mode,
@@ -29,7 +32,9 @@ const createAppTheme = (mode: ThemeMode) => createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+            backgroundColor: mode === 'dark' 
+              ? 'rgba(255, 255, 255, 0.05)' 
+              : 'rgba(0, 0, 0, 0.02)',
           },
         },
       },
@@ -38,13 +43,17 @@ const createAppTheme = (mode: ThemeMode) => createTheme({
 });
 
 function App() {
+  // State management
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [baseUrl, setBaseUrl] = useState(configService.getBaseUrl());
   const [themeMode, setThemeMode] = useState<ThemeMode>(configService.getTheme());
+
+  // Create theme based on current mode
   const theme = createAppTheme(themeMode);
 
+  // Initialize chat on component mount
   useEffect(() => {
     const initializeChat = () => {
       try {
@@ -62,6 +71,7 @@ function App() {
     initializeChat();
   }, []);
 
+  // Event handlers
   const handleNewChat = () => {
     setModelSelectorOpen(true);
   };
@@ -171,6 +181,7 @@ function App() {
         </Box>
       </Box>
 
+      {/* Dialogs */}
       <ModelSelector
         open={modelSelectorOpen}
         onClose={() => setModelSelectorOpen(false)}

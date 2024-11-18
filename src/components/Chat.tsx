@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, TextField, IconButton, Paper, Container, Alert, Snackbar, Typography, useTheme } from '@mui/material';
+import { Box, TextField, IconButton, Alert, Snackbar, Typography, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
@@ -15,8 +15,19 @@ interface ChatProps {
     sessionId: number;
 }
 
+/**
+ * Chat component that handles message display and interaction
+ * Features:
+ * - Message history display
+ * - Message sending
+ * - Code block rendering
+ * - Markdown support
+ * - Real-time streaming responses
+ */
 const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     const theme = useTheme();
+    
+    // State management
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -26,17 +37,20 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         isAvailable: false,
         hasModels: false
     });
+    
+    // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Check Ollama status on mount
     useEffect(() => {
         const checkStatus = async () => {
             const status = await checkOllamaStatus();
             setOllamaStatus(status);
         };
-
         checkStatus();
     }, []);
 
+    // Load chat messages when session changes
     useEffect(() => {
         const loadChat = () => {
             try {
@@ -58,6 +72,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         }
     }, [sessionId, ollamaStatus]);
 
+    // Auto-scroll to bottom when messages change
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
@@ -66,6 +81,9 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         scrollToBottom();
     }, [messages]);
 
+    /**
+     * Handles sending a new message and receiving the response
+     */
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
@@ -81,16 +99,18 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             setIsLoading(true);
             setError(null);
 
+            // Save user message
             storageService.addChatMessage(sessionId, userMessage.role, userMessage.content);
-
             const updatedMessages = [...messages, userMessage];
             setMessages(updatedMessages);
 
+            // Generate title for new chats
             if (messages.length === 0) {
                 const title = await generateTitle(currentInput, model);
                 storageService.updateChatSessionTitle(sessionId, title);
             }
 
+            // Prepare for assistant response
             let assistantMessage: Message = {
                 role: 'assistant',
                 content: ''
@@ -98,6 +118,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
 
             setMessages([...updatedMessages, assistantMessage]);
 
+            // Stream the response
             await streamResponse(
                 updatedMessages,
                 model,
@@ -125,6 +146,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         }
     };
 
+    // Custom components for markdown rendering
     const MarkdownComponents = {
         code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
@@ -167,6 +189,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         }
     };
 
+    // Render installation instructions if Ollama is not available
     if (!ollamaStatus.isAvailable) {
         return (
             <Box sx={{ 
@@ -203,6 +226,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
             overflow: 'hidden',
             bgcolor: 'background.default'
         }}>
+            {/* Model Info Header */}
             <Box sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -223,6 +247,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                 </Typography>
             </Box>
             
+            {/* Messages Area */}
             <Box 
                 sx={{ 
                     flex: 1, 
@@ -310,6 +335,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                 <div ref={messagesEndRef} />
             </Box>
             
+            {/* Input Area */}
             <Box sx={{ 
                 p: 2,
                 borderTop: `1px solid ${theme.palette.divider}`,
@@ -400,6 +426,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                 </Box>
             </Box>
 
+            {/* Error Snackbar */}
             <Snackbar 
                 open={!!error} 
                 autoHideDuration={6000} 
