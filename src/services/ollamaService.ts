@@ -1,3 +1,5 @@
+import { configService } from './configService';
+
 interface OllamaResponse {
     model: string;
     created_at: string;
@@ -32,7 +34,8 @@ const formatConversationHistory = (messages: { role: string; content: string }[]
 
 export const checkOllamaStatus = async (): Promise<OllamaStatus> => {
     try {
-        const response = await fetch('http://localhost:11434/api/tags');
+        const baseUrl = configService.getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/tags`);
         if (!response.ok) {
             return { isAvailable: false, hasModels: false };
         }
@@ -48,7 +51,8 @@ export const checkOllamaStatus = async (): Promise<OllamaStatus> => {
 
 export const getAvailableModels = async (): Promise<OllamaModel[]> => {
     try {
-        const response = await fetch('http://localhost:11434/api/tags');
+        const baseUrl = configService.getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/tags`);
         if (!response.ok) {
             throw new Error('Failed to fetch models');
         }
@@ -62,7 +66,8 @@ export const getAvailableModels = async (): Promise<OllamaModel[]> => {
 
 export const generateTitle = async (content: string, model: string): Promise<string> => {
     try {
-        const response = await fetch('http://localhost:11434/api/generate', {
+        const baseUrl = configService.getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/generate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -99,7 +104,8 @@ export const streamResponse = async (
             ? formatConversationHistory(conversationHistory) + currentMessage.content
             : currentMessage.content;
 
-        const response = await fetch('http://localhost:11434/api/generate', {
+        const baseUrl = configService.getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/generate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
