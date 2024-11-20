@@ -24,6 +24,9 @@ export type OllamaStatus = {
 // Store conversation context for continuous chat
 let currentContext: number[] | undefined;
 
+// Store the current AbortController
+let currentAbortController: AbortController | null = null;
+
 /**
  * Formats the conversation history into a prompt string
  * Adds appropriate prefixes for user and assistant messages
@@ -118,6 +121,16 @@ export const generateTitle = async (content: string, model: string): Promise<str
 };
 
 /**
+ * Stops the current response stream
+ */
+export const stopStream = () => {
+    if (currentAbortController) {
+        currentAbortController.abort();
+        currentAbortController = null;
+    }
+};
+
+/**
  * Streams a response from the Ollama API
  * Handles continuous conversation by maintaining context
  * Provides real-time updates through callbacks
@@ -129,6 +142,10 @@ export const streamResponse = async (
     onComplete: () => void
 ): Promise<void> => {
     try {
+        // Create new AbortController for this stream
+        currentAbortController = new AbortController();
+        const signal = currentAbortController.signal;
+
         // Prepare the prompt using conversation history
         const conversationHistory = messages.slice(0, -1);
         const currentMessage = messages[messages.length - 1];
@@ -160,6 +177,7 @@ export const streamResponse = async (
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(requestBody),
+            signal, // Add abort signal to the request
         });
 
         if (!response.ok) {
@@ -173,33 +191,45 @@ export const streamResponse = async (
         }
 
         // Process the stream
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                onComplete();
-                break;
-            }
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    onComplete();
+                    break;
+                }
 
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n').filter(Boolean);
-            
-            for (const line of lines) {
-                try {
-                    const json = JSON.parse(line) as OllamaResponse;
-                    if (json.response) {
-                        onChunk(json.response);
+                const chunk = new TextDecoder().decode(value);
+                const lines = chunk.split('\n').filter(Boolean);
+                
+                for (const line of lines) {
+                    try {
+                        const json = JSON.parse(line) as OllamaResponse;
+                        if (json.response) {
+                            onChunk(json.response);
+                        }
+                        if (json.context) {
+                            currentContext = json.context;
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse chunk:', e);
                     }
-                    if (json.context) {
-                        currentContext = json.context;
-                    }
-                } catch (e) {
-                    console.error('Failed to parse chunk:', e);
                 }
             }
+        } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                onComplete();
+                return;
+            }
+            throw error;
+        } finally {
+            currentAbortController = null;
         }
     } catch (error) {
-        console.error('Error in stream:', error);
-        throw error;
+        if (error instanceof Error && error.name !== 'AbortError') {
+            console.error('Error in stream:', error);
+            throw error;
+        }
     }
 };
 
