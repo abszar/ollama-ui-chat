@@ -23,8 +23,10 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   SmartToy as ModelIcon,
+  DragHandle as DragHandleIcon,
 } from "@mui/icons-material";
 import { storageService } from "../services/storageService";
+import { useResizable } from "../hooks/useResizable";
 
 // Types
 interface ChatSession {
@@ -55,6 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
 }) => {
   const theme = useTheme();
+  const { width, isResizing, startResizing } = useResizable();
   
   // State
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -143,13 +146,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <Box
       sx={{
-        width: 280,
+        width,
         backgroundColor: 'background.paper',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
         borderRight: `1px solid ${theme.palette.divider}`,
+        position: 'relative',
+        userSelect: isResizing ? 'none' : 'auto',
       }}
     >
       {/* New Chat Button */}
@@ -322,6 +327,43 @@ const Sidebar: React.FC<SidebarProps> = ({
           </ListItem>
         ))}
       </List>
+
+      {/* Resize Handle */}
+      <Box
+        onMouseDown={startResizing}
+        sx={{
+          position: 'absolute',
+          top: 0,
+          right: -4,
+          bottom: 0,
+          width: 8,
+          cursor: 'col-resize',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          '&:hover': {
+            '.resize-handle': {
+              opacity: 0.5,
+            },
+          },
+          '&:active': {
+            '.resize-handle': {
+              opacity: 1,
+            },
+          },
+        }}
+      >
+        <Box
+          className="resize-handle"
+          sx={{
+            width: 2,
+            height: '100%',
+            backgroundColor: theme.palette.divider,
+            opacity: 0,
+            transition: 'opacity 0.2s',
+          }}
+        />
+      </Box>
 
       {/* Edit Title Dialog */}
       <Dialog 
