@@ -9,6 +9,10 @@
       name="description"
       content="A user interface chat application for Ollama"
     />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' http://localhost:11434 http://localhost:3000; img-src 'self' data: http://localhost:11434 http://localhost:3000; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval';"
+    />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a

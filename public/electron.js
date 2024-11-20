@@ -43,7 +43,10 @@ if (!gotTheLock) {
         responseHeaders: {
           ...details.responseHeaders,
           "Content-Security-Policy": [
-            "default-src 'self' http://localhost:11434; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';",
+            "default-src 'self' http://localhost:11434 http://localhost:3000; " +
+            "img-src 'self' data: http://localhost:11434 http://localhost:3000; " +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+            "style-src 'self' 'unsafe-inline';"
           ],
         },
       });

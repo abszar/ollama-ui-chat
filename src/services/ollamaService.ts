@@ -28,7 +28,7 @@ let currentContext: number[] | undefined;
  * Formats the conversation history into a prompt string
  * Adds appropriate prefixes for user and assistant messages
  */
-const formatConversationHistory = (messages: { role: string; content: string }[]): string => {
+const formatConversationHistory = (messages: { role: string; content: string; image?: string }[]): string => {
     return messages.map(msg => {
         if (msg.role === 'user') {
             return `Human: ${msg.content}`;
@@ -36,6 +36,17 @@ const formatConversationHistory = (messages: { role: string; content: string }[]
             return `Assistant: ${msg.content}`;
         }
     }).join('\n\n') + '\n\nHuman: ';
+};
+
+/**
+ * Extracts base64 data from a data URL
+ */
+const extractBase64FromDataUrl = (dataUrl: string): string => {
+    const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (matches && matches.length === 3) {
+        return matches[2];
+    }
+    return '';
 };
 
 /**
@@ -112,7 +123,7 @@ export const generateTitle = async (content: string, model: string): Promise<str
  * Provides real-time updates through callbacks
  */
 export const streamResponse = async (
-    messages: { role: string; content: string }[],
+    messages: { role: string; content: string; image?: string }[],
     model: string,
     onChunk: (chunk: string) => void,
     onComplete: () => void
@@ -125,6 +136,22 @@ export const streamResponse = async (
             ? formatConversationHistory(conversationHistory) + currentMessage.content
             : currentMessage.content;
 
+        // Prepare request body
+        const requestBody: any = {
+            model: model,
+            prompt: prompt,
+            context: currentContext,
+            stream: true
+        };
+
+        // Add image data if present
+        if (currentMessage.image) {
+            const base64Data = extractBase64FromDataUrl(currentMessage.image);
+            if (base64Data) {
+                requestBody.images = [base64Data];
+            }
+        }
+
         // Make the API request
         const baseUrl = configService.getBaseUrl();
         const response = await fetch(`${baseUrl}/api/generate`, {
@@ -132,12 +159,7 @@ export const streamResponse = async (
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                model: model,
-                prompt: prompt,
-                context: currentContext,
-                stream: true
-            }),
+            body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -187,4 +209,12 @@ export const streamResponse = async (
  */
 export const resetContext = () => {
     currentContext = undefined;
+};
+
+/**
+ * Checks if a model supports image input
+ */
+export const isModelMultimodal = (model: string): boolean => {
+    const multimodalModels = ['llava', 'bakllava'];
+    return multimodalModels.some(m => model.toLowerCase().startsWith(m));
 };

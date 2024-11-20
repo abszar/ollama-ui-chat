@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Box, TextField, IconButton, Alert, Snackbar, Typography, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import ImageIcon from '@mui/icons-material/Image';
+import CloseIcon from '@mui/icons-material/Close';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Message } from '../types/chat';
-import { streamResponse, generateTitle, checkOllamaStatus } from '../services/ollamaService';
+import { streamResponse, generateTitle, checkOllamaStatus, isModelMultimodal } from '../services/ollamaService';
 import { storageService } from '../services/storageService';
 import CodeBlock from './CodeBlock';
 import LoadingDots from './LoadingDots';
@@ -15,15 +17,6 @@ interface ChatProps {
     sessionId: number;
 }
 
-/**
- * Chat component that handles message display and interaction
- * Features:
- * - Message history display
- * - Message sending
- * - Code block rendering
- * - Markdown support
- * - Real-time streaming responses
- */
 const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     const theme = useTheme();
     
@@ -33,6 +26,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [model, setModel] = useState<string>('');
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [ollamaStatus, setOllamaStatus] = useState<{ isAvailable: boolean; hasModels: boolean }>({
         isAvailable: false,
         hasModels: false
@@ -40,6 +34,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
     
     // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Check Ollama status on mount
     useEffect(() => {
@@ -58,7 +53,8 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                 const chatModel = storageService.getChatModel(sessionId);
                 setMessages(chatMessages.map(msg => ({
                     role: msg.role,
-                    content: msg.content
+                    content: msg.content,
+                    image: msg.image
                 })));
                 setModel(chatModel);
             } catch (error) {
@@ -81,26 +77,61 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         scrollToBottom();
     }, [messages]);
 
-    /**
-     * Handles sending a new message and receiving the response
-     */
+    const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                setError('Please select an image file');
+                return;
+            }
+            
+            try {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    setSelectedImage(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Error reading file:', error);
+                setError('Failed to read image file');
+            }
+        }
+    };
+
+    const handleImageRemove = () => {
+        setSelectedImage(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+        if ((!input.trim() && !selectedImage) || isLoading) return;
+
+        if (selectedImage && !isModelMultimodal(model)) {
+            setError('Current model does not support image input. Please use llava or bakllava models for image analysis.');
+            return;
+        }
 
         const userMessage: Message = {
             role: 'user',
-            content: input.trim()
+            content: input.trim(),
+            image: selectedImage || undefined
         };
 
         const currentInput = input.trim();
         setInput('');
+        setSelectedImage(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
 
         try {
             setIsLoading(true);
             setError(null);
 
             // Save user message
-            storageService.addChatMessage(sessionId, userMessage.role, userMessage.content);
+            storageService.addChatMessage(sessionId, userMessage.role, userMessage.content, userMessage.image);
             const updatedMessages = [...messages, userMessage];
             setMessages(updatedMessages);
 
@@ -303,6 +334,22 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                                 },
                             }}
                         >
+                            {message.image && (
+                                <Box sx={{ mb: 2 }}>
+                                    <img 
+                                        src={message.image} 
+                                        alt="User uploaded"
+                                        style={{
+                                            maxWidth: '250px',
+                                            maxHeight: '250px',
+                                            width: 'auto',
+                                            height: 'auto',
+                                            borderRadius: '8px',
+                                            objectFit: 'contain'
+                                        }}
+                                    />
+                                </Box>
+                            )}
                             <ReactMarkdown 
                                 remarkPlugins={[remarkGfm]}
                                 components={MarkdownComponents}
@@ -341,6 +388,44 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                 borderTop: `1px solid ${theme.palette.divider}`,
                 backgroundColor: theme.palette.mode === 'dark' ? '#1d1d1d' : '#f8f9fa'
             }}>
+                {selectedImage && (
+                    <Box sx={{ 
+                        maxWidth: '900px',
+                        margin: '0 auto 1rem auto',
+                        position: 'relative',
+                        display: 'inline-block'
+                    }}>
+                        <img 
+                            src={selectedImage} 
+                            alt="Selected"
+                            style={{
+                                maxWidth: '150px',
+                                maxHeight: '150px',
+                                width: 'auto',
+                                height: 'auto',
+                                borderRadius: '8px',
+                                border: `1px solid ${theme.palette.divider}`,
+                                objectFit: 'contain'
+                            }}
+                        />
+                        <IconButton
+                            onClick={handleImageRemove}
+                            size="small"
+                            sx={{
+                                position: 'absolute',
+                                top: -8,
+                                right: -8,
+                                backgroundColor: theme.palette.background.paper,
+                                border: `1px solid ${theme.palette.divider}`,
+                                '&:hover': {
+                                    backgroundColor: theme.palette.action.hover,
+                                }
+                            }}
+                        >
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                )}
                 <Box sx={{ 
                     display: 'flex',
                     alignItems: 'flex-end',
@@ -361,6 +446,25 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                         boxShadow: `0 0 0 2px ${theme.palette.primary.main}33`,
                     }
                 }}>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        ref={fileInputRef}
+                        onChange={handleImageSelect}
+                    />
+                    <IconButton
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isLoading || !isModelMultimodal(model)}
+                        sx={{
+                            color: theme.palette.primary.main,
+                            '&.Mui-disabled': {
+                                color: theme.palette.action.disabled,
+                            }
+                        }}
+                    >
+                        <ImageIcon />
+                    </IconButton>
                     <TextField
                         fullWidth
                         multiline
@@ -394,7 +498,7 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
                     <IconButton 
                         color="primary" 
                         onClick={handleSend}
-                        disabled={isLoading || !input.trim()}
+                        disabled={isLoading || (!input.trim() && !selectedImage)}
                         sx={{
                             backgroundColor: 'primary.main',
                             width: '36px',

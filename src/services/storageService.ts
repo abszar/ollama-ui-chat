@@ -40,13 +40,14 @@ class LocalStorageService implements StorageService {
             .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     }
 
-    addChatMessage(sessionId: number, role: 'user' | 'assistant', content: string): ChatMessage {
+    addChatMessage(sessionId: number, role: 'user' | 'assistant', content: string, image?: string): ChatMessage {
         const messages = this.getAllItems('chat_messages');
         const newMessage: ChatMessage = {
             id: this.getNextId('chat_messages'),
             session_id: sessionId,
             role,
             content,
+            image,
             created_at: new Date().toISOString()
         };
         messages.push(newMessage);
