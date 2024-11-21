@@ -53,7 +53,7 @@ function App() {
   // Create theme based on current mode
   const theme = createAppTheme(themeMode);
 
-  // Initialize chat on component mount
+  // Initialize chat
   useEffect(() => {
     const initializeChat = () => {
       try {

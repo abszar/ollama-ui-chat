@@ -16,6 +16,7 @@ import {
   Chip,
   Divider,
   useTheme,
+  keyframes,
 } from "@mui/material";
 import {
   ChatBubbleOutline as ChatIcon,
@@ -27,6 +28,24 @@ import {
 } from "@mui/icons-material";
 import { storageService } from "../services/storageService";
 import { useResizable } from "../hooks/useResizable";
+import { checkOllamaStatus, getAvailableModels } from "../services/ollamaService";
+
+const pulse = keyframes`
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+  }
+  
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(255, 68, 68, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+  }
+`;
 
 // Types
 interface ChatSession {
@@ -43,14 +62,6 @@ interface SidebarProps {
   onNewChat: () => void;
 }
 
-/**
- * Sidebar component that displays chat sessions and handles chat management
- * Features:
- * - List of chat sessions
- * - New chat creation
- * - Chat deletion
- * - Chat title editing
- */
 const Sidebar: React.FC<SidebarProps> = ({
   selectedChat,
   onSelectChat,
@@ -64,6 +75,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [editingSession, setEditingSession] = useState<ChatSession | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isOllamaOffline, setIsOllamaOffline] = useState(false);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
 
   /**
    * Loads chat sessions from storage
@@ -87,6 +100,30 @@ const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     loadChatSessions();
     const interval = setInterval(loadChatSessions, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check Ollama status and available models periodically
+  useEffect(() => {
+    const checkStatus = async () => {
+      const status = await checkOllamaStatus();
+      setIsOllamaOffline(!status.isAvailable);
+      
+      if (status.isAvailable) {
+        try {
+          const models = await getAvailableModels();
+          setAvailableModels(models.map(m => m.name));
+        } catch (error) {
+          console.error("Error fetching models:", error);
+          setAvailableModels([]);
+        }
+      } else {
+        setAvailableModels([]);
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -141,6 +178,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const isModelUnavailable = (model: string) => {
+    return isOllamaOffline || !availableModels.includes(model);
   };
 
   return (
@@ -240,6 +281,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {/* Chat Title and Actions */}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <ChatIcon sx={{ color: theme.palette.text.secondary, fontSize: '1.2rem', mr: 1 }} />
+                  {isModelUnavailable(session.model) && (
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        backgroundColor: "#ff4444",
+                        animation: `${pulse} 2s infinite`,
+                        mr: 1,
+                      }}
+                    />
+                  )}
                   <Typography
                     noWrap
                     sx={{

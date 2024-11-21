@@ -1,8 +1,25 @@
 import React, { useState } from 'react';
-import { Box, Typography, Link, Button } from '@mui/material';
+import { Box, Typography, Link, Button, keyframes } from '@mui/material';
 import CodeBlock from './CodeBlock';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+
+const pulse = keyframes`
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+  }
+  
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(255, 68, 68, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+  }
+`;
 
 interface InstallInstructionsProps {
     type: 'no-ollama' | 'no-models';
@@ -191,9 +208,20 @@ const InstallInstructions: React.FC<InstallInstructionsProps> = ({ type }) => {
                 padding: 4,
                 color: '#e0e0e0',
             }}>
-                <Typography variant="h5" sx={{ mb: 1, color: '#fff', fontWeight: 500 }}>
-                    Ollama Not Detected
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                    <Typography variant="h5" sx={{ color: '#fff', fontWeight: 500 }}>
+                        Ollama Not Detected
+                    </Typography>
+                    <Box
+                        sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            backgroundColor: '#ff4444',
+                            animation: `${pulse} 2s infinite`,
+                        }}
+                    />
+                </Box>
 
                 <Typography sx={{ mb: 4, color: '#bbb' }}>
                     We detected you're using {getDetectedOS()}. Follow these instructions to install Ollama:

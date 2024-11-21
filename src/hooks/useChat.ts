@@ -27,12 +27,25 @@ export const useChat = (sessionId: number) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Check Ollama status periodically
   useEffect(() => {
     const checkStatus = async () => {
-      const status = await checkOllamaStatus();
-      setOllamaStatus(status);
+      try {
+        const status = await checkOllamaStatus();
+        setOllamaStatus(status);
+      } catch (error) {
+        console.error("Error checking Ollama status:", error);
+      }
     };
+
+    // Initial check
     checkStatus();
+
+    // Set up polling interval (every 3 seconds)
+    const intervalId = setInterval(checkStatus, 3000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
