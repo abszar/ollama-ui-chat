@@ -1,15 +1,18 @@
 import React from "react";
-import { Box, Avatar, Button } from "@mui/material";
+import { Box, Avatar, Button, IconButton, Tooltip } from "@mui/material";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Message as MessageType } from "../../types/chat";
 import { useTheme } from "@mui/material";
 import { messageStyles } from "../../styles/messageStyles";
 import { MarkdownComponents } from "./MarkdownComponents";
+import { speechService } from "../../services/speechService";
 
 interface MessageProps {
   message: MessageType;
@@ -30,6 +33,42 @@ export const Message: React.FC<MessageProps> = ({
 }) => {
   const theme = useTheme();
   const styles = messageStyles(theme);
+  const [isSpeaking, setIsSpeaking] = React.useState(false);
+
+  const handleSpeak = () => {
+    try {
+      if (isSpeaking) {
+        speechService.stop();
+        setIsSpeaking(false);
+      } else {
+        // Remove markdown syntax and clean up the text before speaking
+        const plainText = content
+          .replace(/[#*`_~\[\]]/g, '')
+          .replace(/\n+/g, ' ')
+          .trim();
+
+        const utterance = new SpeechSynthesisUtterance(plainText);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        speechService.speak(plainText);
+        setIsSpeaking(true);
+      }
+    } catch (error) {
+      console.error('Speech synthesis error:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  // Stop speaking when component unmounts or content changes
+  React.useEffect(() => {
+    return () => {
+      if (isSpeaking) {
+        speechService.stop();
+        setIsSpeaking(false);
+      }
+    };
+  }, [isSpeaking, content]);
 
   return (
     <Box sx={styles.messageContainer(message.role)}>
@@ -51,6 +90,19 @@ export const Message: React.FC<MessageProps> = ({
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={MarkdownComponents(theme)}>
           {content}
         </ReactMarkdown>
+        {message.role === "assistant" && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1 }}>
+            <Tooltip title={isSpeaking ? "Stop speaking" : "Read message"}>
+              <IconButton 
+                onClick={handleSpeak}
+                size="small"
+                sx={{ color: theme.palette.text.secondary }}
+              >
+                {isSpeaking ? <VolumeOffIcon /> : <VolumeUpIcon />}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
         {shouldShowExpandButton && (
           <Button
             onClick={onToggleExpand}

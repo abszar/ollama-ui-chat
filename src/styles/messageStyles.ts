@@ -1,6 +1,77 @@
 import { Theme } from "@mui/material";
 
-export const messageStyles = (theme: Theme) => ({
+type MessageStylesType = {
+  messageContainer: (role: string) => {
+    display: string;
+    justifyContent: string;
+    maxWidth: string;
+    gap: number;
+    alignItems: string;
+  };
+  messageContent: (role: string) => {
+    maxWidth: string;
+    backgroundColor: string;
+    color: string;
+    borderRadius: string;
+    px: number;
+    py: number;
+    boxShadow: string;
+    overflowWrap: string;
+    wordWrap: string;
+    wordBreak: string;
+    hyphens: string;
+    "& pre": {
+      margin: string;
+      whiteSpace: string;
+      wordBreak: string;
+    };
+    "& code": {
+      whiteSpace: string;
+      wordBreak: string;
+    };
+    "& p:first-of-type": {
+      marginTop: number;
+    };
+    "& p:last-of-type": {
+      marginBottom: number;
+    };
+  };
+  assistantAvatar: {
+    bgcolor: string;
+    width: number;
+    height: number;
+  };
+  userAvatar: {
+    bgcolor: string;
+    width: number;
+    height: number;
+  };
+  avatarIcon: {
+    fontSize: number;
+    color: string | undefined;
+  };
+  imageContainer: {
+    mb: number;
+  };
+  image: {
+    maxWidth: string;
+    maxHeight: string;
+    width: string;
+    height: string;
+    borderRadius: string;
+    objectFit: "contain";
+  };
+  expandButton: {
+    mt: number;
+    textTransform: string;
+    color: string;
+    "&:hover": {
+      backgroundColor: string;
+    };
+  };
+};
+
+export const messageStyles = (theme: Theme): MessageStylesType => ({
   messageContainer: (role: string) => ({
     display: "flex",
     justifyContent: role === "user" ? "flex-end" : "flex-start",
@@ -44,8 +115,7 @@ export const messageStyles = (theme: Theme) => ({
   }),
 
   assistantAvatar: {
-    bgcolor: (theme: Theme) =>
-      theme.palette.mode === "dark" ? "#2f2f2f" : "#e3e3e3",
+    bgcolor: theme.palette.mode === "dark" ? "#2f2f2f" : "#e3e3e3",
     width: 32,
     height: 32,
   },
@@ -58,8 +128,7 @@ export const messageStyles = (theme: Theme) => ({
 
   avatarIcon: {
     fontSize: 20,
-    color: (theme: Theme) =>
-      theme.palette.mode === "dark" ? theme.palette.text.secondary : undefined,
+    color: theme.palette.mode === "dark" ? theme.palette.text.secondary : undefined,
   },
 
   imageContainer: {
@@ -84,3 +153,5 @@ export const messageStyles = (theme: Theme) => ({
     },
   },
 });
+
+export type { MessageStylesType };
