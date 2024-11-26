@@ -16,16 +16,112 @@ interface OllamaModel {
     modified_at: string;
 }
 
+export interface OllamaLibraryModel {
+    name: string;
+    description: string;
+    tags: string[];
+    size?: string;
+}
+
 export type OllamaStatus = {
     isAvailable: boolean;
     hasModels: boolean;
 };
+
+export interface ModelPullProgress {
+    status: string;
+    digest?: string;
+    total?: number;
+    completed?: number;
+}
 
 // Store conversation context for continuous chat
 let currentContext: number[] | undefined;
 
 // Store the current AbortController
 let currentAbortController: AbortController | null = null;
+
+// Default models list from Ollama
+const DEFAULT_MODELS: OllamaLibraryModel[] = [
+    {
+        name: "llama2",
+        description: "Meta's Llama 2 LLM, fine-tuned for chat",
+        tags: ["chat", "general"],
+        size: "3.8GB"
+    },
+    {
+        name: "llama2:13b",
+        description: "Meta's Llama 2 13B parameter LLM, fine-tuned for chat",
+        tags: ["chat", "general"],
+        size: "7.3GB"
+    },
+    {
+        name: "llama2:70b",
+        description: "Meta's Llama 2 70B parameter LLM, fine-tuned for chat",
+        tags: ["chat", "general"],
+        size: "39GB"
+    },
+    {
+        name: "codellama",
+        description: "Meta's Llama 2 based model, fine-tuned for coding tasks",
+        tags: ["coding", "programming"],
+        size: "3.8GB"
+    },
+    {
+        name: "codellama:13b",
+        description: "Meta's Llama 2 13B parameter model, fine-tuned for coding tasks",
+        tags: ["coding", "programming"],
+        size: "7.3GB"
+    },
+    {
+        name: "codellama:34b",
+        description: "Meta's Llama 2 34B parameter model, fine-tuned for coding tasks",
+        tags: ["coding", "programming"],
+        size: "19.1GB"
+    },
+    {
+        name: "mistral",
+        description: "Mistral AI's 7B parameter model, offering strong performance",
+        tags: ["chat", "general"],
+        size: "4.1GB"
+    },
+    {
+        name: "mixtral",
+        description: "Mistral AI's latest model with improved capabilities",
+        tags: ["chat", "general"],
+        size: "26GB"
+    },
+    {
+        name: "llava",
+        description: "Multimodal model capable of understanding images",
+        tags: ["vision", "multimodal"],
+        size: "4.1GB"
+    },
+    {
+        name: "orca-mini",
+        description: "Smaller, faster model optimized for chat",
+        tags: ["chat", "fast"],
+        size: "4GB"
+    },
+    {
+        name: "neural-chat",
+        description: "Intel's neural chat model optimized for conversation",
+        tags: ["chat", "fast"],
+        size: "4GB"
+    },
+    {
+        name: "starling-lm",
+        description: "Berkeley's Starling LM model trained on human feedback",
+        tags: ["chat", "general"],
+        size: "4.1GB"
+    },
+    {
+        name: "phi",
+        description: "Microsoft's Phi-2 small language model",
+        tags: ["chat", "fast"],
+        size: "2.7GB"
+    }
+];
 
 /**
  * Formats the conversation history into a prompt string
@@ -86,6 +182,110 @@ export const getAvailableModels = async (): Promise<OllamaModel[]> => {
         return data.models || [];
     } catch (error) {
         console.error('Error fetching models:', error);
+        throw error;
+    }
+};
+
+/**
+ * Returns the list of available models from Ollama's library
+ */
+export const getLibraryModels = async (): Promise<OllamaLibraryModel[]> => {
+    return DEFAULT_MODELS;
+};
+
+/**
+ * Deletes a model from Ollama
+ */
+export const deleteModel = async (modelName: string): Promise<void> => {
+    try {
+        const baseUrl = configService.getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: modelName }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete model');
+        }
+    } catch (error) {
+        console.error('Error deleting model:', error);
+        throw error;
+    }
+};
+
+/**
+ * Cancels the current model installation
+ */
+export const cancelModelInstall = () => {
+    if (currentAbortController) {
+        currentAbortController.abort();
+        currentAbortController = null;
+    }
+};
+
+/**
+ * Installs a model from the Ollama library
+ * @param modelName The name of the model to install (e.g., "llama2", "codellama")
+ * @param onProgress Callback for installation progress updates
+ */
+export const installModel = async (
+    modelName: string,
+    onProgress: (progress: ModelPullProgress) => void
+): Promise<void> => {
+    try {
+        // Create new AbortController for this installation
+        currentAbortController = new AbortController();
+        const signal = currentAbortController.signal;
+
+        const baseUrl = configService.getBaseUrl();
+        const response = await fetch(`${baseUrl}/api/pull`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: modelName }),
+            signal, // Add abort signal to the request
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to start model installation');
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+            throw new Error('Failed to create stream reader');
+        }
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = new TextDecoder().decode(value);
+                const lines = chunk.split('\n').filter(Boolean);
+
+                for (const line of lines) {
+                    try {
+                        const progress = JSON.parse(line);
+                        onProgress(progress);
+                    } catch (e) {
+                        console.error('Failed to parse progress:', e);
+                    }
+                }
+            }
+        } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                throw new Error('Installation cancelled');
+            }
+            throw error;
+        } finally {
+            currentAbortController = null;
+        }
+    } catch (error) {
+        console.error('Error installing model:', error);
         throw error;
     }
 };

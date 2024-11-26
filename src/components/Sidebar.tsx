@@ -25,10 +25,12 @@ import {
   Edit as EditIcon,
   SmartToy as ModelIcon,
   DragHandle as DragHandleIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import { storageService } from "../services/storageService";
 import { useResizable } from "../hooks/useResizable";
 import { checkOllamaStatus, getAvailableModels } from "../services/ollamaService";
+import { ModelInstaller } from "./ModelInstaller";
 
 const pulse = keyframes`
   0% {
@@ -77,6 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isOllamaOffline, setIsOllamaOffline] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [installerOpen, setInstallerOpen] = useState(false);
 
   /**
    * Loads chat sessions from storage
@@ -167,6 +170,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  const handleInstallComplete = async () => {
+    setInstallerOpen(false);
+    const status = await checkOllamaStatus();
+    if (status.isAvailable) {
+      const models = await getAvailableModels();
+      setAvailableModels(models.map(m => m.name));
+    }
+  };
+
   /**
    * Formats a date string into a readable format
    */
@@ -198,8 +210,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         userSelect: isResizing ? 'none' : 'auto',
       }}
     >
-      {/* New Chat Button */}
-      <Box sx={{ p: 2 }}>
+      {/* Action Buttons */}
+      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
         <Button
           variant="contained"
           fullWidth
@@ -219,6 +231,25 @@ const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           New Chat
+        </Button>
+
+        <Button
+          variant="outlined"
+          fullWidth
+          startIcon={<DownloadIcon />}
+          onClick={() => setInstallerOpen(true)}
+          sx={{
+            height: '44px',
+            fontSize: '0.95rem',
+            textTransform: 'none',
+            borderColor: theme.palette.divider,
+            color: theme.palette.text.primary,
+            "&:hover": {
+              borderColor: theme.palette.primary.main,
+            },
+          }}
+        >
+          Install Model
         </Button>
       </Box>
 
@@ -444,6 +475,23 @@ const Sidebar: React.FC<SidebarProps> = ({
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleEditSave} variant="contained">Save</Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Model Installer Dialog */}
+      <Dialog
+        open={installerOpen}
+        onClose={() => setInstallerOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.background.paper,
+          }
+        }}
+      >
+        <DialogContent>
+          <ModelInstaller onComplete={handleInstallComplete} />
+        </DialogContent>
       </Dialog>
     </Box>
   );
