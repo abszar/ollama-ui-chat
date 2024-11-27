@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Snackbar, Alert } from "@mui/material";
+import { Box, Snackbar, Alert, Theme } from "@mui/material";
 import { Message } from "./chat/Message";
 import { MessageInput } from "./chat/MessageInput";
 import { ModelHeader } from "./chat/ModelHeader";
@@ -81,6 +81,21 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
         flexDirection: "column",
         overflow: "hidden",
         bgcolor: "background.default",
+        position: "relative",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: 0.4,
+          pointerEvents: "none",
+          backgroundImage: (theme: Theme) => `
+            radial-gradient(circle at 1px 1px, ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 1px, transparent 0)
+          `,
+          backgroundSize: "16px 16px",
+        },
       }}
     >
       <ModelHeader model={model} />
@@ -95,6 +110,8 @@ const Chat: React.FC<ChatProps> = ({ sessionId }) => {
           display: "flex",
           flexDirection: "column",
           gap: 2.5,
+          position: "relative",
+          zIndex: 1,
           "&::-webkit-scrollbar": {
             width: "6px",
           },
