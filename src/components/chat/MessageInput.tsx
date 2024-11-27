@@ -42,8 +42,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     <Box
       sx={{
         p: 2,
-        borderTop: `1px solid ${theme.palette.divider}`,
-        backgroundColor: theme.palette.mode === "dark" ? "#1d1d1d" : "#f8f9fa",
+        backgroundColor: 'transparent',
       }}
     >
       {selectedImage && (
@@ -98,7 +97,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           borderRadius: "16px",
           padding: "8px",
           transition: "all 0.2s ease",
-          border: `1px solid ${theme.palette.divider}`,
           "&:hover": {
             backgroundColor: theme.palette.mode === "dark" ? "#2f2f2f" : "#fafafa",
           },

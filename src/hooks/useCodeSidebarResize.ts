@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const MIN_WIDTH = 400;
 const MAX_WIDTH = 800;
@@ -16,35 +16,34 @@ export const useCodeSidebarResize = ({ initialWidth = DEFAULT_WIDTH }: UseResiza
     });
     const [isResizing, setIsResizing] = useState(false);
 
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isResizing) return;
-            
-            const newWidth = window.innerWidth - e.clientX;
-            if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
-                setWidth(newWidth);
-                localStorage.setItem(STORAGE_KEY, String(newWidth));
-            }
-        };
-
-        const handleMouseUp = () => {
-            setIsResizing(false);
-        };
-
-        if (isResizing) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
-
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        if (!isResizing) return;
+        
+        const newWidth = Math.min(Math.max(window.innerWidth - e.clientX, MIN_WIDTH), MAX_WIDTH);
+        requestAnimationFrame(() => {
+            setWidth(newWidth);
+            localStorage.setItem(STORAGE_KEY, String(newWidth));
+        });
     }, [isResizing]);
 
-    const startResizing = () => {
+    const handleMouseUp = useCallback(() => {
+        setIsResizing(false);
+    }, []);
+
+    useEffect(() => {
+        if (isResizing) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            return () => {
+                window.removeEventListener('mousemove', handleMouseMove);
+                window.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [isResizing, handleMouseMove, handleMouseUp]);
+
+    const startResizing = useCallback(() => {
         setIsResizing(true);
-    };
+    }, []);
 
     return {
         width,

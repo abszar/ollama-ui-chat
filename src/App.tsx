@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, CssBaseline, Typography, ThemeProvider, createTheme, Dialog, DialogContent } from '@mui/material';
+import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import Chat from './components/Chat';
 import Sidebar from './components/Sidebar';
 import { CodeSidebar } from './components/CodeSidebar';
@@ -7,13 +7,13 @@ import ConfigDialog from './components/ConfigDialog';
 import { configService } from './services/configService';
 import WindowControls from './components/WindowControls';
 import { useCodeSidebarStore } from './store/codeSidebarStore';
-import { ModelInstaller } from './components/ModelInstaller';
+import { HomePage } from './components/HomePage';
 import { storageService } from './services/storageService';
+import { streamResponse } from './services/ollamaService';
 
 function App() {
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
-  const [modelSelectOpen, setModelSelectOpen] = useState(false);
   const [mode, setMode] = useState<'light' | 'dark'>('dark');
   const isCodeSidebarOpen = useCodeSidebarStore(state => state.isOpen);
 
@@ -31,15 +31,35 @@ function App() {
     setSelectedChat(chatId);
   };
 
-  const handleNewChat = () => {
-    setModelSelectOpen(true);
-  };
-
-  const handleModelSelect = (model: string) => {
+  const handleStartChat = async (model: string, initialMessage?: string) => {
     try {
       const newSession = storageService.createChatSession('New Chat', model);
+      // Set selected chat immediately
       setSelectedChat(newSession.id);
-      setModelSelectOpen(false);
+      
+      if (initialMessage) {
+        // Add user message
+        storageService.addChatMessage(newSession.id, 'user', initialMessage);
+
+        // Generate title based on initial message
+        const title = initialMessage.length > 50 
+          ? initialMessage.substring(0, 50) + '...'
+          : initialMessage;
+        storageService.updateChatSessionTitle(newSession.id, title);
+
+        // Add and stream assistant response
+        let assistantMessage = '';
+        await streamResponse(
+          [{ role: 'user', content: initialMessage }],
+          model,
+          (chunk) => {
+            assistantMessage += chunk;
+          },
+          async () => {
+            storageService.addChatMessage(newSession.id, 'assistant', assistantMessage);
+          }
+        );
+      }
     } catch (error) {
       console.error('Error creating new chat:', error);
     }
@@ -78,7 +98,7 @@ function App() {
           <Sidebar
             selectedChat={selectedChat}
             onSelectChat={handleSelectChat}
-            onNewChat={handleNewChat}
+            onNewChat={() => setSelectedChat(null)}
             onOpenConfig={() => setConfigOpen(true)}
           />
           <Box
@@ -96,25 +116,7 @@ function App() {
             {selectedChat ? (
               <Chat sessionId={selectedChat} />
             ) : (
-              <Box
-                sx={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 2,
-                  p: 4,
-                  textAlign: 'center',
-                }}
-              >
-                <Typography variant="h4" gutterBottom>
-                  Welcome to Ollama Chat
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Start a new chat or select an existing conversation to begin
-                </Typography>
-              </Box>
+              <HomePage onStartChat={handleStartChat} />
             )}
           </Box>
           <CodeSidebar />
@@ -126,25 +128,6 @@ function App() {
           currentTheme={mode}
           onSave={handleConfigSave}
         />
-        <Dialog
-          open={modelSelectOpen}
-          onClose={() => setModelSelectOpen(false)}
-          maxWidth="md"
-          fullWidth
-          PaperProps={{
-            sx: {
-              backgroundColor: customTheme.palette.background.paper,
-            }
-          }}
-        >
-          <DialogContent>
-            <ModelInstaller 
-              mode="select"
-              onComplete={() => setModelSelectOpen(false)}
-              onModelSelect={handleModelSelect}
-            />
-          </DialogContent>
-        </Dialog>
       </Box>
     </ThemeProvider>
   );

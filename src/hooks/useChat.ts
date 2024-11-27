@@ -49,7 +49,7 @@ export const useChat = (sessionId: number) => {
   }, []);
 
   useEffect(() => {
-    const loadChat = () => {
+    const loadChat = async () => {
       try {
         const chatMessages = storageService.getChatMessages(sessionId);
         const chatModel = storageService.getChatModel(sessionId);
@@ -61,6 +61,35 @@ export const useChat = (sessionId: number) => {
           }))
         );
         setModel(chatModel);
+
+        // If there's a user message but no assistant response, generate one
+        if (chatMessages.length === 1 && chatMessages[0].role === 'user') {
+          const userMessage = chatMessages[0];
+          const assistantMessage: Message = {
+            role: "assistant",
+            content: "",
+          };
+
+          setIsLoading(true);
+          setMessages([userMessage, assistantMessage]);
+
+          await streamResponse(
+            [userMessage],
+            chatModel,
+            (chunk) => {
+              assistantMessage.content += chunk;
+              setMessages([userMessage, { ...assistantMessage }]);
+            },
+            async () => {
+              storageService.addChatMessage(
+                sessionId,
+                assistantMessage.role,
+                assistantMessage.content
+              );
+              setIsLoading(false);
+            }
+          );
+        }
       } catch (error) {
         console.error("Error loading chat:", error);
         setError("Failed to load messages");
@@ -129,7 +158,11 @@ export const useChat = (sessionId: number) => {
       image: selectedImage || undefined,
     };
 
-    const currentInput = input.trim();
+    const assistantMessage: Message = {
+      role: "assistant",
+      content: "",
+    };
+
     setInput("");
     setSelectedImage(null);
     if (fileInputRef.current) {
@@ -146,19 +179,8 @@ export const useChat = (sessionId: number) => {
         userMessage.content,
         userMessage.image
       );
+
       const updatedMessages = [...messages, userMessage];
-      setMessages(updatedMessages);
-
-      if (messages.length === 0) {
-        const title = await generateTitle(currentInput, model);
-        storageService.updateChatSessionTitle(sessionId, title);
-      }
-
-      let assistantMessage: Message = {
-        role: "assistant",
-        content: "",
-      };
-
       setMessages([...updatedMessages, assistantMessage]);
 
       await streamResponse(
@@ -178,10 +200,10 @@ export const useChat = (sessionId: number) => {
         }
       );
     } catch (error: any) {
-      console.error("Error generating response:", error);
+      console.error("Error sending message:", error);
+      setError(error.message || "Failed to send message. Please try again.");
+      setMessages([...messages, userMessage]);
       setIsLoading(false);
-      setError(error.message || "Failed to generate response. Please try again.");
-      setMessages(messages);
     }
   };
 
