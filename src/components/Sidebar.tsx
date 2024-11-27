@@ -13,7 +13,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Divider,
   useTheme,
 } from "@mui/material";
 import {
@@ -24,8 +23,8 @@ import {
   SmartToy as ModelIcon,
   Download as DownloadIcon,
   Settings as SettingsIcon,
-  Info as InfoIcon,
 } from "@mui/icons-material";
+import { BurgerMenuIcon } from "./BurgerMenuIcon";
 import { storageService } from "../services/storageService";
 import { useResizable } from "../hooks/useResizable";
 import { checkOllamaStatus, getAvailableModels } from "../services/ollamaService";
@@ -54,6 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const theme = useTheme();
   const { width, isResizing, startResizing } = useResizable();
+  const [isCollapsed, setIsCollapsed] = useState(false);
   
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [editingSession, setEditingSession] = useState<ChatSession | null>(null);
@@ -153,10 +153,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     return isOllamaOffline || !availableModels.includes(model);
   };
 
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
     <Box
       sx={{
-        width,
+        width: isCollapsed ? '48px' : width,
         backgroundColor: 'background.paper',
         height: '100%',
         display: 'flex',
@@ -165,70 +169,116 @@ const Sidebar: React.FC<SidebarProps> = ({
         borderRight: `1px solid ${theme.palette.divider}`,
         position: 'relative',
         userSelect: isResizing ? 'none' : 'auto',
+        transition: 'width 0.2s ease',
       }}
     >
-      <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+      {!isCollapsed && (
+        <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, position: 'relative' }}>
+            <Button
+              variant="outlined"
+              fullWidth
+              startIcon={<DownloadIcon />}
+              onClick={() => setInstallerOpen(true)}
+              sx={{
+                height: '36px',
+                fontSize: '0.9rem',
+                textTransform: 'none',
+                borderColor: theme.palette.divider,
+                color: theme.palette.text.primary,
+                "&:hover": {
+                  borderColor: theme.palette.primary.main,
+                },
+              }}
+            >
+              Manage Modules
+            </Button>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Button
+                variant="outlined"
+                onClick={onOpenConfig}
+                sx={{
+                  height: '36px',
+                  minWidth: '36px',
+                  width: '36px',
+                  padding: 0,
+                  borderColor: theme.palette.divider,
+                  color: theme.palette.text.primary,
+                  "&:hover": {
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                <SettingsIcon sx={{ fontSize: '1.2rem' }} />
+              </Button>
+              <IconButton
+                onClick={toggleCollapse}
+                sx={{
+                  height: '36px',
+                  width: '36px',
+                  color: theme.palette.text.secondary,
+                  '&:hover': {
+                    color: theme.palette.text.primary,
+                  },
+                }}
+              >
+                <BurgerMenuIcon />
+              </IconButton>
+            </Box>
+          </Box>
+
           <Button
-            variant="outlined"
+            variant="contained"
             fullWidth
-            startIcon={<DownloadIcon />}
-            onClick={() => setInstallerOpen(true)}
+            startIcon={<AddIcon />}
+            onClick={onNewChat}
             sx={{
+              backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f0f0f0',
+              color: theme.palette.text.primary,
+              boxShadow: 'none',
               height: '36px',
               fontSize: '0.9rem',
               textTransform: 'none',
-              borderColor: theme.palette.divider,
-              color: theme.palette.text.primary,
               "&:hover": {
-                borderColor: theme.palette.primary.main,
+                backgroundColor: theme.palette.mode === 'dark' ? '#3d3d3d' : '#e0e0e0',
+                boxShadow: 'none',
               },
             }}
           >
-            Manage Modules
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={onOpenConfig}
-            sx={{
-              height: '36px',
-              minWidth: '36px',
-              width: '36px',
-              padding: 0,
-              borderColor: theme.palette.divider,
-              color: theme.palette.text.primary,
-              "&:hover": {
-                borderColor: theme.palette.primary.main,
-              },
-            }}
-          >
-            <SettingsIcon sx={{ fontSize: '1.2rem' }} />
+            New Chat
           </Button>
         </Box>
+      )}
 
-        <Button
-          variant="contained"
-          fullWidth
-          startIcon={<AddIcon />}
-          onClick={onNewChat}
-          sx={{
-            backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f0f0f0',
-            color: theme.palette.text.primary,
-            boxShadow: 'none',
-            height: '36px',
-            fontSize: '0.9rem',
-            textTransform: 'none',
-            "&:hover": {
-              backgroundColor: theme.palette.mode === 'dark' ? '#3d3d3d' : '#e0e0e0',
-              boxShadow: 'none',
-            },
-          }}
-        >
-          New Chat
-        </Button>
-      </Box>
-
-      <Divider sx={{ borderColor: theme.palette.divider }} />
+      {isCollapsed && (
+        <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <IconButton
+            onClick={toggleCollapse}
+            sx={{
+              width: '32px',
+              height: '32px',
+              color: theme.palette.text.secondary,
+              '&:hover': {
+                color: theme.palette.text.primary,
+              },
+            }}
+          >
+            <BurgerMenuIcon />
+          </IconButton>
+          <Tooltip title="New Chat" placement="right">
+            <IconButton
+              onClick={onNewChat}
+              sx={{
+                width: '32px',
+                height: '32px',
+                color: theme.palette.text.primary,
+              }}
+            >
+              <AddIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
 
       <List sx={{ 
         flex: 1, 
@@ -280,127 +330,137 @@ const Sidebar: React.FC<SidebarProps> = ({
                 },
               }}
             >
-              <Box sx={{ width: '100%', display: 'flex', alignItems: 'center' }}>
+              {isCollapsed ? (
                 <ChatIcon sx={{ 
-                  color: theme.palette.text.secondary, 
-                  fontSize: '1rem',
-                  mr: 1,
+                  fontSize: '1.2rem',
+                  color: theme.palette.text.secondary,
                   opacity: 0.7
                 }} />
-                {isModelUnavailable(session.model) && (
-                  <Box
+              ) : (
+                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center' }}>
+                  <ChatIcon sx={{ 
+                    color: theme.palette.text.secondary, 
+                    fontSize: '1rem',
+                    mr: 1,
+                    opacity: 0.7
+                  }} />
+                  {isModelUnavailable(session.model) && (
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: "#ff4444",
+                        mr: 1,
+                      }}
+                    />
+                  )}
+                  <Typography
+                    noWrap
                     sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      backgroundColor: "#ff4444",
-                      mr: 1,
+                      color: theme.palette.text.primary,
+                      fontSize: "0.85rem",
+                      fontWeight: 400,
+                      flex: 1,
                     }}
-                  />
-                )}
-                <Typography
-                  noWrap
-                  sx={{
-                    color: theme.palette.text.primary,
-                    fontSize: "0.85rem",
-                    fontWeight: 400,
-                    flex: 1,
-                  }}
-                >
-                  {session.title}
-                </Typography>
-                <Box 
-                  className="action-buttons"
-                  sx={{ 
-                    opacity: 0,
-                    transition: 'opacity 0.2s',
-                    display: 'flex',
-                    gap: 0.5,
-                    ml: 1,
-                    alignItems: 'center'
-                  }}
-                >
-                  <Tooltip title={`Model: ${session.model}`}>
-                    <InfoIcon sx={{ 
-                      fontSize: '0.9rem',
-                      color: theme.palette.text.secondary,
-                      opacity: 0.7
-                    }} />
-                  </Tooltip>
-                  <Tooltip title="Edit title">
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleEditClick(session, e)}
-                      sx={{ 
+                  >
+                    {session.title}
+                  </Typography>
+                  <Box 
+                    className="action-buttons"
+                    sx={{ 
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                      display: 'flex',
+                      gap: 0.5,
+                      ml: 1,
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Tooltip title={`Model: ${session.model}`}>
+                      <ModelIcon sx={{ 
+                        fontSize: '0.9rem',
                         color: theme.palette.text.secondary,
-                        padding: '2px',
-                        '&:hover': { 
-                          color: theme.palette.text.primary,
-                          backgroundColor: theme.palette.action.hover
-                        }
-                      }}
-                    >
-                      <EditIcon sx={{ fontSize: '0.9rem' }} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete chat">
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleDeleteChat(session.id, e)}
-                      sx={{ 
-                        color: theme.palette.text.secondary,
-                        padding: '2px',
-                        '&:hover': { 
-                          color: theme.palette.error.main,
-                          backgroundColor: theme.palette.error.main + '1A'
-                        }
-                      }}
-                    >
-                      <DeleteIcon sx={{ fontSize: '0.9rem' }} />
-                    </IconButton>
-                  </Tooltip>
+                        opacity: 0.7
+                      }} />
+                    </Tooltip>
+                    <Tooltip title="Edit title">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleEditClick(session, e)}
+                        sx={{ 
+                          color: theme.palette.text.secondary,
+                          padding: '2px',
+                          '&:hover': { 
+                            color: theme.palette.text.primary,
+                            backgroundColor: theme.palette.action.hover
+                          }
+                        }}
+                      >
+                        <EditIcon sx={{ fontSize: '0.9rem' }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete chat">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleDeleteChat(session.id, e)}
+                        sx={{ 
+                          color: theme.palette.text.secondary,
+                          padding: '2px',
+                          '&:hover': { 
+                            color: theme.palette.error.main,
+                            backgroundColor: theme.palette.error.main + '1A'
+                          }
+                        }}
+                      >
+                        <DeleteIcon sx={{ fontSize: '0.9rem' }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
-              </Box>
+              )}
             </ListItemButton>
           </ListItem>
         ))}
       </List>
 
-      <Box
-        onMouseDown={startResizing}
-        sx={{
-          position: 'absolute',
-          top: 0,
-          right: -4,
-          bottom: 0,
-          width: 8,
-          cursor: 'col-resize',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          '&:hover': {
-            '.resize-handle': {
-              opacity: 0.5,
-            },
-          },
-          '&:active': {
-            '.resize-handle': {
-              opacity: 1,
-            },
-          },
-        }}
-      >
+      {!isCollapsed && (
         <Box
-          className="resize-handle"
+          onMouseDown={startResizing}
           sx={{
-            width: 2,
-            height: '100%',
-            backgroundColor: theme.palette.divider,
-            opacity: 0,
-            transition: 'opacity 0.2s',
+            position: 'absolute',
+            top: 0,
+            right: -4,
+            bottom: 0,
+            width: 8,
+            cursor: 'col-resize',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            '&:hover': {
+              '.resize-handle': {
+                opacity: 0.5,
+              },
+            },
+            '&:active': {
+              '.resize-handle': {
+                opacity: 1,
+              },
+            },
           }}
-        />
-      </Box>
+        >
+          <Box
+            className="resize-handle"
+            sx={{
+              width: 2,
+              height: '100%',
+              backgroundColor: theme.palette.divider,
+              opacity: 0,
+              transition: 'opacity 0.2s',
+            }}
+          />
+        </Box>
+      )}
 
       <Dialog 
         open={dialogOpen} 
