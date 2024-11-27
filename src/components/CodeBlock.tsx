@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Paper, Typography, IconButton, Tooltip, Fade } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import js from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
 import ts from 'react-syntax-highlighter/dist/esm/languages/hljs/typescript';
@@ -9,6 +10,7 @@ import python from 'react-syntax-highlighter/dist/esm/languages/hljs/python';
 import xml from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
 import css from 'react-syntax-highlighter/dist/esm/languages/hljs/css';
 import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { useCodeSidebarStore } from '../store/codeSidebarStore';
 
 // Register languages
 SyntaxHighlighter.registerLanguage('javascript', js);
@@ -20,6 +22,8 @@ SyntaxHighlighter.registerLanguage('css', css);
 export interface CodeBlockProps {
     code: string;
     language: string;
+    isGenerating?: boolean;
+    inSidebar?: boolean;
 }
 
 const normalizeLanguage = (language: string): string => {
@@ -38,11 +42,14 @@ const normalizeLanguage = (language: string): string => {
     return languageMap[language.toLowerCase()] || 'javascript';
 };
 
+const BACKGROUND_COLOR = '#282c34';
+const HOVER_COLOR = '#2c313a';
+
 const customStyle = {
     ...atomOneDark,
     hljs: {
         ...atomOneDark.hljs,
-        background: '#282c34',
+        background: 'transparent',
         color: '#abb2bf'
     },
     'hljs-keyword': {
@@ -81,12 +88,14 @@ const customStyle = {
     }
 };
 
-const CodeBlock: React.FC<CodeBlockProps> = ({ code, language }) => {
+const CodeBlock: React.FC<CodeBlockProps> = ({ code, language, isGenerating, inSidebar = false }) => {
     const [showCopy, setShowCopy] = useState(false);
     const [copied, setCopied] = useState(false);
     const normalizedLanguage = normalizeLanguage(language);
+    const openSidebar = useCodeSidebarStore(state => state.openSidebar);
 
-    const handleCopy = async () => {
+    const handleCopy = async (e: React.MouseEvent) => {
+        e.stopPropagation();
         try {
             await navigator.clipboard.writeText(code);
             setCopied(true);
@@ -98,65 +107,107 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ code, language }) => {
         }
     };
 
+    const handleExpand = () => {
+        openSidebar(code, language);
+    };
+
     return (
         <Paper 
             elevation={2}
+            onClick={!inSidebar ? handleExpand : undefined}
             sx={{
                 mt: 1,
                 mb: 1,
                 overflow: 'hidden',
-                backgroundColor: '#282c34',
-                borderRadius: 1,
+                backgroundColor: BACKGROUND_COLOR,
+                borderRadius: '20px',
                 fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
-                position: 'relative'
+                position: 'relative',
+                cursor: !inSidebar ? 'pointer' : 'default',
+                transition: 'all 0.2s ease',
+                '&:hover': !inSidebar ? {
+                    backgroundColor: HOVER_COLOR,
+                    transform: 'scale(1.002)',
+                } : {},
             }}
             onMouseEnter={() => setShowCopy(true)}
             onMouseLeave={() => setShowCopy(false)}
         >
             <Box
                 sx={{
-                    backgroundColor: '#21252b',
+                    backgroundColor: BACKGROUND_COLOR,
                     px: 2,
                     py: 1,
-                    borderBottom: '1px solid #181a1f',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    borderTopLeftRadius: '20px',
+                    borderTopRightRadius: '20px',
                 }}
             >
                 <Typography
-                    variant="caption"
                     sx={{
                         color: '#abb2bf',
                         textTransform: 'lowercase',
                         fontFamily: 'monospace',
-                        fontSize: '0.85rem'
+                        fontSize: '0.85rem',
+                        fontWeight: 900,
                     }}
                 >
                     {language}
                 </Typography>
-                <Fade in={showCopy}>
-                    <Tooltip 
-                        title={copied ? "Copied!" : "Copy code"} 
-                        placement="left"
-                        arrow
-                    >
-                        <IconButton
-                            size="small"
-                            onClick={handleCopy}
-                            sx={{
-                                color: copied ? '#98c379' : '#abb2bf',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255,255,255,0.1)'
-                                }
-                            }}
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    {!inSidebar && (
+                        <Fade in={showCopy}>
+                            <Tooltip title="Open in sidebar" placement="top" arrow>
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleExpand();
+                                    }}
+                                    sx={{
+                                        color: '#abb2bf',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255,255,255,0.1)'
+                                        }
+                                    }}
+                                >
+                                    <OpenInFullIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Fade>
+                    )}
+                    <Fade in={showCopy}>
+                        <Tooltip 
+                            title={copied ? "Copied!" : "Copy code"} 
+                            placement="top"
+                            arrow
                         >
-                            {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
-                        </IconButton>
-                    </Tooltip>
-                </Fade>
+                            <IconButton
+                                size="small"
+                                onClick={handleCopy}
+                                sx={{
+                                    color: copied ? '#98c379' : '#abb2bf',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(255,255,255,0.1)'
+                                    }
+                                }}
+                            >
+                                {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
+                            </IconButton>
+                        </Tooltip>
+                    </Fade>
+                </Box>
             </Box>
-            <Box sx={{ overflowX: 'auto' }}>
+            <Box 
+                sx={{ 
+                    backgroundColor: BACKGROUND_COLOR,
+                    borderBottomLeftRadius: '20px',
+                    borderBottomRightRadius: '20px',
+                }}
+            >
                 <SyntaxHighlighter
                     language={normalizedLanguage}
                     style={customStyle}
@@ -166,7 +217,9 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ code, language }) => {
                         padding: '1rem',
                         fontSize: '0.9rem',
                         lineHeight: '1.5',
-                        backgroundColor: 'transparent'
+                        backgroundColor: 'transparent',
+                        borderBottomLeftRadius: '20px',
+                        borderBottomRightRadius: '20px',
                     }}
                     lineNumberStyle={{
                         minWidth: '2.5em',

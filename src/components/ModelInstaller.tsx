@@ -34,11 +34,14 @@ import {
     Download as DownloadIcon,
     Launch as LaunchIcon,
     Delete as DeleteIcon,
-    Stop as StopIcon
+    Stop as StopIcon,
+    Chat as ChatIcon
 } from '@mui/icons-material';
 
 interface ModelInstallerProps {
     onComplete: () => void;
+    mode?: 'install' | 'select';
+    onModelSelect?: (model: string) => void;
 }
 
 interface TabPanelProps {
@@ -64,7 +67,11 @@ function TabPanel(props: TabPanelProps) {
     );
 }
 
-export const ModelInstaller: React.FC<ModelInstallerProps> = ({ onComplete }) => {
+export const ModelInstaller: React.FC<ModelInstallerProps> = ({ 
+    onComplete, 
+    mode = 'install',
+    onModelSelect 
+}) => {
     const theme = useTheme();
     const [models, setModels] = useState<OllamaLibraryModel[]>([]);
     const [installedModels, setInstalledModels] = useState<string[]>([]);
@@ -73,7 +80,7 @@ export const ModelInstaller: React.FC<ModelInstallerProps> = ({ onComplete }) =>
     const [progress, setProgress] = useState<ModelPullProgress | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [customModelName, setCustomModelName] = useState('');
-    const [activeTab, setActiveTab] = useState(0);
+    const [activeTab, setActiveTab] = useState(mode === 'select' ? 1 : 0);
 
     useEffect(() => {
         loadModels();
@@ -136,6 +143,13 @@ export const ModelInstaller: React.FC<ModelInstallerProps> = ({ onComplete }) =>
         setCustomModelName('');
     };
 
+    const handleModelSelect = (modelName: string) => {
+        if (onModelSelect) {
+            onModelSelect(modelName);
+            onComplete();
+        }
+    };
+
     const getProgressPercentage = () => {
         if (!progress?.total || !progress?.completed) return 0;
         return (progress.completed / progress.total) * 100;
@@ -151,38 +165,42 @@ export const ModelInstaller: React.FC<ModelInstallerProps> = ({ onComplete }) =>
 
     return (
         <Box>
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    Install Custom Model
-                </Typography>
-                <form onSubmit={handleCustomInstall}>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <TextField
-                            fullWidth
-                            size="small"
-                            placeholder="Enter model name (e.g., llama2:13b)"
-                            value={customModelName}
-                            onChange={(e) => setCustomModelName(e.target.value)}
-                            disabled={!!installing}
-                        />
-                        <Button
-                            variant="contained"
-                            type="submit"
-                            disabled={!customModelName.trim() || !!installing}
-                            startIcon={<DownloadIcon />}
-                        >
-                            Install
-                        </Button>
+            {mode === 'install' && (
+                <>
+                    <Box sx={{ mb: 3 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Install Custom Model
+                        </Typography>
+                        <form onSubmit={handleCustomInstall}>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    placeholder="Enter model name (e.g., llama2:13b)"
+                                    value={customModelName}
+                                    onChange={(e) => setCustomModelName(e.target.value)}
+                                    disabled={!!installing}
+                                />
+                                <Button
+                                    variant="contained"
+                                    type="submit"
+                                    disabled={!customModelName.trim() || !!installing}
+                                    startIcon={<DownloadIcon />}
+                                >
+                                    Install
+                                </Button>
+                            </Box>
+                        </form>
                     </Box>
-                </form>
-            </Box>
 
-            <Divider sx={{ my: 3 }} />
+                    <Divider sx={{ my: 3 }} />
+                </>
+            )}
 
             <Box sx={{ width: '100%' }}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-                        <Tab label="Available Models" />
+                        <Tab label="Available Models" disabled={mode === 'select'} />
                         <Tab label={`Installed Models (${installedModels.length})`} />
                     </Tabs>
                 </Box>
@@ -297,19 +315,37 @@ export const ModelInstaller: React.FC<ModelInstallerProps> = ({ onComplete }) =>
                                             </Tooltip>
                                         </Box>
                                     ) : installedModels.includes(model.name) ? (
-                                        <Tooltip title="Uninstall Model">
-                                            <IconButton
-                                                onClick={() => handleUninstall(model.name)}
+                                        mode === 'select' ? (
+                                            <Button
+                                                variant="contained"
+                                                size="small"
+                                                startIcon={<ChatIcon />}
+                                                onClick={() => handleModelSelect(model.name)}
                                                 sx={{ 
-                                                    color: theme.palette.error.main,
+                                                    backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f0f0f0',
+                                                    color: theme.palette.text.primary,
                                                     '&:hover': {
-                                                        backgroundColor: theme.palette.error.main + '1A'
+                                                        backgroundColor: theme.palette.mode === 'dark' ? '#3d3d3d' : '#e0e0e0',
                                                     }
                                                 }}
                                             >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Tooltip>
+                                                Select
+                                            </Button>
+                                        ) : (
+                                            <Tooltip title="Uninstall Model">
+                                                <IconButton
+                                                    onClick={() => handleUninstall(model.name)}
+                                                    sx={{ 
+                                                        color: theme.palette.error.main,
+                                                        '&:hover': {
+                                                            backgroundColor: theme.palette.error.main + '1A'
+                                                        }
+                                                    }}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )
                                     ) : (
                                         <Button
                                             variant="outlined"
@@ -342,21 +378,44 @@ export const ModelInstaller: React.FC<ModelInstallerProps> = ({ onComplete }) =>
                         <List>
                             {installedModels.map((modelName) => (
                                 <ListItem key={modelName}>
-                                    <ListItemText primary={modelName} />
+                                    <ListItemText 
+                                        primary={modelName}
+                                        primaryTypographyProps={{
+                                            sx: { fontFamily: 'monospace' }
+                                        }}
+                                    />
                                     <ListItemSecondaryAction>
-                                        <Tooltip title="Uninstall Model">
-                                            <IconButton
-                                                onClick={() => handleUninstall(modelName)}
+                                        {mode === 'select' ? (
+                                            <Button
+                                                variant="contained"
+                                                size="small"
+                                                startIcon={<ChatIcon />}
+                                                onClick={() => handleModelSelect(modelName)}
                                                 sx={{ 
-                                                    color: theme.palette.error.main,
+                                                    backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f0f0f0',
+                                                    color: theme.palette.text.primary,
                                                     '&:hover': {
-                                                        backgroundColor: theme.palette.error.main + '1A'
+                                                        backgroundColor: theme.palette.mode === 'dark' ? '#3d3d3d' : '#e0e0e0',
                                                     }
                                                 }}
                                             >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Tooltip>
+                                                Select
+                                            </Button>
+                                        ) : (
+                                            <Tooltip title="Uninstall Model">
+                                                <IconButton
+                                                    onClick={() => handleUninstall(modelName)}
+                                                    sx={{ 
+                                                        color: theme.palette.error.main,
+                                                        '&:hover': {
+                                                            backgroundColor: theme.palette.error.main + '1A'
+                                                        }
+                                                    }}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                     </ListItemSecondaryAction>
                                 </ListItem>
                             ))}

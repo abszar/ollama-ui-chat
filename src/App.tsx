@@ -1,200 +1,151 @@
-import React, { useState, useEffect } from 'react';
-import { ThemeProvider, createTheme, CssBaseline, Box, IconButton } from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
+import React, { useState } from 'react';
+import { Box, CssBaseline, Typography, ThemeProvider, createTheme, Dialog, DialogContent } from '@mui/material';
 import Chat from './components/Chat';
 import Sidebar from './components/Sidebar';
-import ModelSelector from './components/ModelSelector';
-import WindowControls from './components/WindowControls';
+import { CodeSidebar } from './components/CodeSidebar';
 import ConfigDialog from './components/ConfigDialog';
+import { configService } from './services/configService';
+import WindowControls from './components/WindowControls';
+import { useCodeSidebarStore } from './store/codeSidebarStore';
+import { ModelInstaller } from './components/ModelInstaller';
 import { storageService } from './services/storageService';
-import { configService, ThemeMode } from './services/configService';
-import { resetContext } from './services/ollamaService';
-
-/**
- * Creates a theme object based on the current mode (light/dark)
- */
-const createAppTheme = (mode: ThemeMode) => createTheme({
-  palette: {
-    mode,
-    primary: {
-      main: '#2196f3',
-    },
-    background: {
-      default: mode === 'dark' ? '#121212' : '#f5f5f5',
-      paper: mode === 'dark' ? '#1e1e1e' : '#ffffff',
-    },
-  },
-  components: {
-    MuiTextField: {
-      defaultProps: {
-        variant: 'outlined',
-      },
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            backgroundColor: mode === 'dark' 
-              ? 'rgba(255, 255, 255, 0.05)' 
-              : 'rgba(0, 0, 0, 0.02)',
-          },
-        },
-      },
-    },
-  },
-});
 
 function App() {
-  // State management
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
-  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
-  const [baseUrl, setBaseUrl] = useState(configService.getBaseUrl());
-  const [themeMode, setThemeMode] = useState<ThemeMode>(configService.getTheme());
+  const [modelSelectOpen, setModelSelectOpen] = useState(false);
+  const [mode, setMode] = useState<'light' | 'dark'>('dark');
+  const isCodeSidebarOpen = useCodeSidebarStore(state => state.isOpen);
 
-  // Create theme based on current mode
-  const theme = createAppTheme(themeMode);
+  const customTheme = createTheme({
+    palette: {
+      mode,
+      background: {
+        default: mode === 'dark' ? '#1a1a1a' : '#f5f5f5',
+        paper: mode === 'dark' ? '#242424' : '#ffffff',
+      },
+    },
+  });
 
-  // Initialize chat
-  useEffect(() => {
-    const initializeChat = () => {
-      try {
-        const sessions = storageService.getChatSessions();
-        if (sessions.length > 0) {
-          setSelectedChat(sessions[0].id);
-        } else {
-          handleNewChat();
-        }
-      } catch (error) {
-        console.error('Error initializing chat:', error);
-      }
-    };
+  const handleSelectChat = (chatId: number) => {
+    setSelectedChat(chatId);
+  };
 
-    initializeChat();
-  }, []);
-
-  // Event handlers
   const handleNewChat = () => {
-    setModelSelectorOpen(true);
+    setModelSelectOpen(true);
   };
 
   const handleModelSelect = (model: string) => {
     try {
-      resetContext();
       const newSession = storageService.createChatSession('New Chat', model);
       setSelectedChat(newSession.id);
-      setModelSelectorOpen(false);
+      setModelSelectOpen(false);
     } catch (error) {
       console.error('Error creating new chat:', error);
     }
   };
 
-  const handleSelectChat = (chatId: number) => {
-    resetContext();
-    setSelectedChat(chatId);
-  };
-
-  const handleSaveConfig = (newBaseUrl: string, newTheme: ThemeMode) => {
-    configService.setBaseUrl(newBaseUrl);
-    configService.setTheme(newTheme);
-    setBaseUrl(newBaseUrl);
-    setThemeMode(newTheme);
+  const handleConfigSave = (baseUrl: string, newTheme: 'light' | 'dark') => {
+    configService.setBaseUrl(baseUrl);
+    if (newTheme !== mode) {
+      setMode(newTheme);
+    }
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={customTheme}>
       <CssBaseline />
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        height: '100vh', 
-        overflow: 'hidden',
-        backgroundColor: 'background.default'
-      }}>
-        {/* Titlebar */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
         <Box
+          className="titlebar"
           sx={{
             height: '32px',
-            minHeight: '32px',
-            backgroundColor: 'background.paper',
+            backgroundColor: mode === 'dark' ? '#1e1e1e' : '#f0f0f0',
             WebkitAppRegion: 'drag',
             position: 'relative',
-            zIndex: 100,
-            borderBottom: '1px solid',
-            borderColor: theme.palette.divider,
-            display: 'flex',
-            alignItems: 'center',
-            px: 2,
-            justifyContent: 'space-between'
+            zIndex: 1000,
+            borderBottom: `1px solid ${customTheme.palette.divider}`,
           }}
         >
-          <IconButton
-            size="small"
-            onClick={() => setConfigOpen(true)}
-            sx={{
-              WebkitAppRegion: 'no-drag',
-              padding: '4px',
-              '& svg': { fontSize: '1.2rem' }
-            }}
-          >
-            <SettingsIcon />
-          </IconButton>
           <WindowControls />
         </Box>
-
-        {/* Main Content */}
         <Box sx={{ 
           display: 'flex', 
           flex: 1, 
           overflow: 'hidden',
-          position: 'relative',
-          zIndex: 1
+          transition: 'margin-right 0.2s ease',
         }}>
-          {/* Sidebar */}
-          <Box sx={{ 
-            display: 'flex',
-            borderRight: '1px solid',
-            borderColor: theme.palette.divider,
-            backgroundColor: 'background.paper',
-          }}>
-            <Sidebar
-              selectedChat={selectedChat}
-              onSelectChat={handleSelectChat}
-              onNewChat={handleNewChat}
-            />
-          </Box>
-
-          {/* Chat Area */}
-          <Box sx={{ 
-            flex: 1, 
-            display: 'flex', 
-            flexDirection: 'column',
-            backgroundColor: 'background.default',
-            overflow: 'hidden',
-            position: 'relative'
-          }}>
-            {selectedChat !== null && (
-              <Chat
-                key={selectedChat}
-                sessionId={selectedChat}
-              />
+          <Sidebar
+            selectedChat={selectedChat}
+            onSelectChat={handleSelectChat}
+            onNewChat={handleNewChat}
+            onOpenConfig={() => setConfigOpen(true)}
+          />
+          <Box
+            component="main"
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              position: 'relative',
+              backgroundColor: customTheme.palette.background.default,
+              transition: 'margin-right 0.2s ease',
+            }}
+          >
+            {selectedChat ? (
+              <Chat sessionId={selectedChat} />
+            ) : (
+              <Box
+                sx={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
+                  p: 4,
+                  textAlign: 'center',
+                }}
+              >
+                <Typography variant="h4" gutterBottom>
+                  Welcome to Ollama Chat
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Start a new chat or select an existing conversation to begin
+                </Typography>
+              </Box>
             )}
           </Box>
+          <CodeSidebar />
         </Box>
+        <ConfigDialog
+          open={configOpen}
+          onClose={() => setConfigOpen(false)}
+          currentBaseUrl={configService.getBaseUrl()}
+          currentTheme={mode}
+          onSave={handleConfigSave}
+        />
+        <Dialog
+          open={modelSelectOpen}
+          onClose={() => setModelSelectOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              backgroundColor: customTheme.palette.background.paper,
+            }
+          }}
+        >
+          <DialogContent>
+            <ModelInstaller 
+              mode="select"
+              onComplete={() => setModelSelectOpen(false)}
+              onModelSelect={handleModelSelect}
+            />
+          </DialogContent>
+        </Dialog>
       </Box>
-
-      {/* Dialogs */}
-      <ModelSelector
-        open={modelSelectorOpen}
-        onClose={() => setModelSelectorOpen(false)}
-        onModelSelect={handleModelSelect}
-      />
-
-      <ConfigDialog
-        open={configOpen}
-        onClose={() => setConfigOpen(false)}
-        currentBaseUrl={baseUrl}
-        currentTheme={themeMode}
-        onSave={handleSaveConfig}
-      />
     </ThemeProvider>
   );
 }

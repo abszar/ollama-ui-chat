@@ -24,8 +24,8 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   SmartToy as ModelIcon,
-  DragHandle as DragHandleIcon,
   Download as DownloadIcon,
+  Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { storageService } from "../services/storageService";
 import { useResizable } from "../hooks/useResizable";
@@ -62,12 +62,14 @@ interface SidebarProps {
   selectedChat: number | null;
   onSelectChat: (chatId: number) => void;
   onNewChat: () => void;
+  onOpenConfig: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   selectedChat,
   onSelectChat,
   onNewChat,
+  onOpenConfig,
 }) => {
   const theme = useTheme();
   const { width, isResizing, startResizing } = useResizable();
@@ -130,12 +132,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Event handlers
-  const handleNewChat = () => {
-    onNewChat();
-    loadChatSessions();
-  };
-
   const handleDeleteChat = async (sessionId: number, event: React.MouseEvent) => {
     event.stopPropagation();
     try {
@@ -179,9 +175,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  /**
-   * Formats a date string into a readable format
-   */
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -212,11 +205,49 @@ const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* Action Buttons */}
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            fullWidth
+            startIcon={<DownloadIcon />}
+            onClick={() => setInstallerOpen(true)}
+            sx={{
+              height: '44px',
+              fontSize: '0.95rem',
+              textTransform: 'none',
+              borderColor: theme.palette.divider,
+              color: theme.palette.text.primary,
+              "&:hover": {
+                borderColor: theme.palette.primary.main,
+              },
+            }}
+          >
+            Manage Modules
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={onOpenConfig}
+            sx={{
+              height: '44px',
+              minWidth: '44px',
+              width: '44px',
+              padding: 0,
+              borderColor: theme.palette.divider,
+              color: theme.palette.text.primary,
+              "&:hover": {
+                borderColor: theme.palette.primary.main,
+              },
+            }}
+          >
+            <SettingsIcon />
+          </Button>
+        </Box>
+
         <Button
           variant="contained"
           fullWidth
           startIcon={<AddIcon />}
-          onClick={handleNewChat}
+          onClick={onNewChat}
           sx={{
             backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f0f0f0',
             color: theme.palette.text.primary,
@@ -231,25 +262,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           New Chat
-        </Button>
-
-        <Button
-          variant="outlined"
-          fullWidth
-          startIcon={<DownloadIcon />}
-          onClick={() => setInstallerOpen(true)}
-          sx={{
-            height: '44px',
-            fontSize: '0.95rem',
-            textTransform: 'none',
-            borderColor: theme.palette.divider,
-            color: theme.palette.text.primary,
-            "&:hover": {
-              borderColor: theme.palette.primary.main,
-            },
-          }}
-        >
-          Install Model
         </Button>
       </Box>
 
