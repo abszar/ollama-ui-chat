@@ -13,10 +13,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Chip,
   Divider,
   useTheme,
-  keyframes,
 } from "@mui/material";
 import {
   ChatBubbleOutline as ChatIcon,
@@ -26,30 +24,13 @@ import {
   SmartToy as ModelIcon,
   Download as DownloadIcon,
   Settings as SettingsIcon,
+  Info as InfoIcon,
 } from "@mui/icons-material";
 import { storageService } from "../services/storageService";
 import { useResizable } from "../hooks/useResizable";
 import { checkOllamaStatus, getAvailableModels } from "../services/ollamaService";
 import { ModelInstaller } from "./ModelInstaller";
 
-const pulse = keyframes`
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
-  }
-  
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(255, 68, 68, 0);
-  }
-  
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
-  }
-`;
-
-// Types
 interface ChatSession {
   id: number;
   title: string;
@@ -74,7 +55,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const theme = useTheme();
   const { width, isResizing, startResizing } = useResizable();
   
-  // State
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [editingSession, setEditingSession] = useState<ChatSession | null>(null);
   const [newTitle, setNewTitle] = useState("");
@@ -83,10 +63,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [installerOpen, setInstallerOpen] = useState(false);
 
-  /**
-   * Loads chat sessions from storage
-   * Removes any quotes from titles for clean display
-   */
   const loadChatSessions = () => {
     try {
       const sessions = storageService.getChatSessions();
@@ -101,14 +77,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // Load chat sessions on mount and periodically refresh
   useEffect(() => {
     loadChatSessions();
     const interval = setInterval(loadChatSessions, 2000);
     return () => clearInterval(interval);
   }, []);
 
-  // Check Ollama status and available models periodically
   useEffect(() => {
     const checkStatus = async () => {
       const status = await checkOllamaStatus();
@@ -175,16 +149,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const isModelUnavailable = (model: string) => {
     return isOllamaOffline || !availableModels.includes(model);
   };
@@ -203,8 +167,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         userSelect: isResizing ? 'none' : 'auto',
       }}
     >
-      {/* Action Buttons */}
-      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
@@ -212,8 +175,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             startIcon={<DownloadIcon />}
             onClick={() => setInstallerOpen(true)}
             sx={{
-              height: '44px',
-              fontSize: '0.95rem',
+              height: '36px',
+              fontSize: '0.9rem',
               textTransform: 'none',
               borderColor: theme.palette.divider,
               color: theme.palette.text.primary,
@@ -228,9 +191,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             variant="outlined"
             onClick={onOpenConfig}
             sx={{
-              height: '44px',
-              minWidth: '44px',
-              width: '44px',
+              height: '36px',
+              minWidth: '36px',
+              width: '36px',
               padding: 0,
               borderColor: theme.palette.divider,
               color: theme.palette.text.primary,
@@ -239,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               },
             }}
           >
-            <SettingsIcon />
+            <SettingsIcon sx={{ fontSize: '1.2rem' }} />
           </Button>
         </Box>
 
@@ -252,8 +215,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f0f0f0',
             color: theme.palette.text.primary,
             boxShadow: 'none',
-            height: '44px',
-            fontSize: '0.95rem',
+            height: '36px',
+            fontSize: '0.9rem',
             textTransform: 'none',
             "&:hover": {
               backgroundColor: theme.palette.mode === 'dark' ? '#3d3d3d' : '#e0e0e0',
@@ -267,7 +230,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <Divider sx={{ borderColor: theme.palette.divider }} />
 
-      {/* Chat Sessions List */}
       <List sx={{ 
         flex: 1, 
         overflowY: "auto",
@@ -290,16 +252,14 @@ const Sidebar: React.FC<SidebarProps> = ({
           <ListItem
             key={session.id}
             disablePadding
-            sx={{
-              borderBottom: `1px solid ${theme.palette.divider}`,
-            }}
           >
             <ListItemButton
               selected={selectedChat === session.id}
               onClick={() => onSelectChat(session.id)}
               sx={{
-                py: 1.5,
-                px: 2,
+                py: 0.75,
+                px: 1.5,
+                minHeight: '36px',
                 "&.Mui-selected": {
                   backgroundColor: theme.palette.mode === 'dark' 
                     ? 'rgba(255, 255, 255, 0.08)'
@@ -320,103 +280,85 @@ const Sidebar: React.FC<SidebarProps> = ({
                 },
               }}
             >
-              <Box sx={{ width: '100%' }}>
-                {/* Chat Title and Actions */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <ChatIcon sx={{ color: theme.palette.text.secondary, fontSize: '1.2rem', mr: 1 }} />
-                  {isModelUnavailable(session.model) && (
-                    <Box
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        backgroundColor: "#ff4444",
-                        animation: `${pulse} 2s infinite`,
-                        mr: 1,
-                      }}
-                    />
-                  )}
-                  <Typography
-                    noWrap
+              <Box sx={{ width: '100%', display: 'flex', alignItems: 'center' }}>
+                <ChatIcon sx={{ 
+                  color: theme.palette.text.secondary, 
+                  fontSize: '1rem',
+                  mr: 1,
+                  opacity: 0.7
+                }} />
+                {isModelUnavailable(session.model) && (
+                  <Box
                     sx={{
-                      color: theme.palette.text.primary,
-                      fontSize: "0.9rem",
-                      fontWeight: 500,
-                      flex: 1,
-                    }}
-                  >
-                    {session.title}
-                  </Typography>
-                  <Box 
-                    className="action-buttons"
-                    sx={{ 
-                      opacity: 0,
-                      transition: 'opacity 0.2s',
-                      display: 'flex',
-                      gap: 0.5
-                    }}
-                  >
-                    <Tooltip title="Edit title">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleEditClick(session, e)}
-                        sx={{ 
-                          color: theme.palette.text.secondary,
-                          padding: '4px',
-                          '&:hover': { 
-                            color: theme.palette.text.primary,
-                            backgroundColor: theme.palette.action.hover
-                          }
-                        }}
-                      >
-                        <EditIcon sx={{ fontSize: '1rem' }} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete chat">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleDeleteChat(session.id, e)}
-                        sx={{ 
-                          color: theme.palette.text.secondary,
-                          padding: '4px',
-                          '&:hover': { 
-                            color: theme.palette.error.main,
-                            backgroundColor: theme.palette.error.main + '1A'
-                          }
-                        }}
-                      >
-                        <DeleteIcon sx={{ fontSize: '1rem' }} />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </Box>
-                
-                {/* Model and Date */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Chip
-                    icon={<ModelIcon sx={{ fontSize: "0.75rem !important" }} />}
-                    label={session.model}
-                    size="small"
-                    sx={{
-                      height: "22px",
-                      backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
-                      border: `1px solid ${theme.palette.divider}`,
-                      color: theme.palette.text.secondary,
-                      "& .MuiChip-label": {
-                        fontSize: "0.7rem",
-                        px: 1,
-                      },
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      backgroundColor: "#ff4444",
+                      mr: 1,
                     }}
                   />
-                  <Typography
-                    variant="caption"
-                    sx={{
+                )}
+                <Typography
+                  noWrap
+                  sx={{
+                    color: theme.palette.text.primary,
+                    fontSize: "0.85rem",
+                    fontWeight: 400,
+                    flex: 1,
+                  }}
+                >
+                  {session.title}
+                </Typography>
+                <Box 
+                  className="action-buttons"
+                  sx={{ 
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    display: 'flex',
+                    gap: 0.5,
+                    ml: 1,
+                    alignItems: 'center'
+                  }}
+                >
+                  <Tooltip title={`Model: ${session.model}`}>
+                    <InfoIcon sx={{ 
+                      fontSize: '0.9rem',
                       color: theme.palette.text.secondary,
-                      fontSize: '0.7rem',
-                    }}
-                  >
-                    {formatDate(session.updated_at)}
-                  </Typography>
+                      opacity: 0.7
+                    }} />
+                  </Tooltip>
+                  <Tooltip title="Edit title">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleEditClick(session, e)}
+                      sx={{ 
+                        color: theme.palette.text.secondary,
+                        padding: '2px',
+                        '&:hover': { 
+                          color: theme.palette.text.primary,
+                          backgroundColor: theme.palette.action.hover
+                        }
+                      }}
+                    >
+                      <EditIcon sx={{ fontSize: '0.9rem' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete chat">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleDeleteChat(session.id, e)}
+                      sx={{ 
+                        color: theme.palette.text.secondary,
+                        padding: '2px',
+                        '&:hover': { 
+                          color: theme.palette.error.main,
+                          backgroundColor: theme.palette.error.main + '1A'
+                        }
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: '0.9rem' }} />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
               </Box>
             </ListItemButton>
@@ -424,7 +366,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </List>
 
-      {/* Resize Handle */}
       <Box
         onMouseDown={startResizing}
         sx={{
@@ -461,7 +402,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         />
       </Box>
 
-      {/* Edit Title Dialog */}
       <Dialog 
         open={dialogOpen} 
         onClose={() => setDialogOpen(false)}
@@ -489,7 +429,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         </DialogActions>
       </Dialog>
 
-      {/* Model Installer Dialog */}
       <Dialog
         open={installerOpen}
         onClose={() => setInstallerOpen(false)}
